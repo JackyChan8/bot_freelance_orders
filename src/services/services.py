@@ -3,7 +3,7 @@ from sqlalchemy import select, insert, update, exists, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import true, false
 
-from models import Users, Orders, ReferralSystem, PromoCode
+from models import Users, Orders, ReferralSystem, PromoCode, Reviews
 from utils.text import user as user_text
 from utils.text import admin as admin_text
 from utils.keyboards.reply import user as user_reply_keyboard
@@ -221,3 +221,46 @@ async def apply_promo_code(user_id: int, promo_code_id: int, order_id: int,
         await session.rollback()
         await message.answer('Произошла ошибка при добавлении заказа в промокод')
         await message.answer(str(exc))
+
+
+# ================================================================= Review
+async def create_review(user_id: int, text: str, rating: int, message: Message, session: AsyncSession) -> None:
+    """Create Review Service"""
+    buttons = await user_reply_keyboard.start_reply_keyboard()
+    query = (
+        insert(Reviews)
+        .values(
+            author=user_id,
+            message=text,
+            rating=rating,
+        )
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(user_text.CREATE_REVIEW_SUCCESS, reply_markup=buttons)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при создании отзыва')
+        await message.answer(str(exc), reply_markup=buttons)
+
+
+async def get_reviews(user_id: int, session: AsyncSession):
+    """Get Reviews Service"""
+    query = (
+        select(Reviews.id)
+        .where(Reviews.is_publish == true(), Reviews.author != user_id)
+    )
+    result = await session.execute(query)
+    return result.scalars().all()
+
+
+async def get_review(review_id: int, session: AsyncSession):
+    """Get Review Service"""
+    query = (
+        select(Reviews)
+        .where(Reviews.id == review_id)
+    )
+    result = await session.execute(query)
+    return result.scalar()
+

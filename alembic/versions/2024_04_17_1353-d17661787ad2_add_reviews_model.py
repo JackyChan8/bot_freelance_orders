@@ -27,6 +27,7 @@ def upgrade() -> None:
         sa.Column("author", sa.BigInteger(), nullable=False),
         sa.Column("message", sa.Text(), nullable=False),
         sa.Column("rating", sa.Integer(), nullable=False),
+        sa.Column("is_publish", sa.Boolean(), nullable=False),
         sa.Column("created_at", sa.Date(), nullable=False),
         sa.Column("updated_at", sa.Date(), nullable=False),
         sa.CheckConstraint("rating <= 5", name="check_rating_not_more_five"),

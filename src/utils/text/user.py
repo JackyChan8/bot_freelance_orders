@@ -116,6 +116,22 @@ async def show_info_promo_code(promo_code_id: int, discount: int, promo_code_cre
 🏷 <b>Скидка:</b> {discount}%
 🕔 <b>Дата Создания:</b> {promo_code_created}
 """
+
+# ================================================================= Reviews
+CREATE_REVIEW_MESSAGE = Bold('Пожалуйста, напишите ваш отзыв')
+CREATE_REVIEW_RATING = Bold('Выберите рейтинг')
+CREATE_REVIEW_SUCCESS = '🎉 Отзыв успешно оставлен 🎉'
+NOT_EXISTS_REVIEWS = 'Отзывы отсутствуют'
+
+
+async def show_info_review(review_id: int, author: str, text: str, rating: int, review_created: str) -> str:
+    """Show Information by Review"""
+    return f"""
+#️⃣ <b>Номер Отзыва:</b> {review_id}
+👤 <b>Автор:</b> @{author}
+📄 <b>Текст:</b> {text}
+🎖 <b>Рейтинг:</b> {rating}
+🕔 <b>Дата Публикации:</b> {review_created}"""
 # =================================================================
 
 ABOUT_US_TEXT = """

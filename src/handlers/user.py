@@ -339,10 +339,10 @@ async def pagination_handler(callback: CallbackQuery, callback_data: Pagination,
     page: int = callback_data.page
     type_: str = callback_data.type
     # Get Data for pagination
-    data = await paginationTypeText.get(
-        type_,
-        paginationTypeText.get('order'))[1](callback.from_user.id, session)
-    await pagination(data=data, type_=type_, message=callback.message, page=page)
+    type_text: tuple = paginationTypeText.get(type_, paginationTypeText.get('order'))
+    data = await type_text[1](callback.from_user.id, session)
+    callback_data: str = type_text[2]
+    await pagination(data=data, type_=type_, message=callback.message, page=page, callback_back=callback_data)
 
 
 # =================================================================
@@ -356,15 +356,76 @@ async def user_costs_command_reply(message: Message) -> None:
 # ================================================================= About Us Menu
 @router.message(~IsAdmin(), F.text == '‍💻 О нас')
 async def user_about_us_command_reply(message: Message) -> None:
+    """About us Reply Command"""
     buttons = await user_inline_keyboard.about_us_inline_keyboard()
     await message.answer(user_text.ABOUT_US_TEXT, reply_markup=buttons)
 
 
 @router.callback_query(~IsAdmin(), F.data == 'our_reviews')
 async def user_our_reviews_inline(callback: CallbackQuery) -> None:
+    """Review Inline Command"""
     buttons = await user_inline_keyboard.reviews_menu_inline_keyboard()
     await callback.message.answer(user_text.REVIEWS_TEXT, reply_markup=buttons)
 
+
+# ================================================================= Reviews
+@router.callback_query(~IsAdmin(), F.data == 'add_review')
+async def user_write_review(callback: CallbackQuery, state: FSMContext) -> None:
+    """Write Review Inline Command"""
+    cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
+    await state.set_state(user_states.ReviewStates.text)
+    await callback.message.answer(
+        **user_text.CREATE_REVIEW_MESSAGE.as_kwargs(),
+        reply_markup=cancel_button,
+    )
+
+
+@router.message(~IsAdmin(), user_states.ReviewStates.text, F.text.casefold() != 'отмена')
+async def user_create_review_message(message: Message, state: FSMContext) -> None:
+    """Write Text Review Reply Command"""
+    buttons = await user_inline_keyboard.reviews_add_rating()
+    await state.update_data(text=message.text)
+    await state.set_state(user_states.ReviewStates.rating)
+    await message.answer(**user_text.CREATE_REVIEW_RATING.as_kwargs(), reply_markup=buttons)
+
+
+@router.callback_query(~IsAdmin(), user_states.ReviewStates.rating)
+async def user_create_review_rating(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
+    """Choose Rating Review Inline Command"""
+    rating: int = int(callback.data.split('_')[-1])
+    await state.update_data(rating=rating)
+    data = await state.get_data()
+    await state.clear()
+    # Added To Database Review
+    await service_user.create_review(callback.from_user.id, **data, message=callback.message, session=session)
+
+
+@router.callback_query(~IsAdmin(), F.data == 'show_review')
+async def user_show_reviews(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Show reviews"""
+    reviews = await service_user.get_reviews(callback.from_user.id, session)
+    if reviews:
+        await delete_before_message(callback)
+        await pagination(data=reviews, type_='review', message=callback.message, callback_back='our_reviews')
+    else:
+        await callback.message.answer(user_text.NOT_EXISTS_REVIEWS)
+
+
+@router.callback_query(~IsAdmin(), F.data.startswith('review_user_№'))
+async def user_get_review(callback: CallbackQuery, session: AsyncSession) -> None:
+    print('user_get_review')
+    review_id: int = int(callback.data.split('№')[-1])
+    # Get Review
+    review = await service_user.get_review(review_id, session)
+    # Get Author Review Username
+    review_author = await callback.bot.get_chat_member(review.author, review.author)
+    # Generate Text
+    text: str = await user_text.show_info_review(
+        review_id, review_author.user.username, review.message, review.rating, review.created_at)
+    await callback.message.answer(text, parse_mode=ParseMode.HTML)
+
+
+# =================================================================
 
 @router.message(~IsAdmin(), F.text == '📋 Правила')
 async def user_rules_command_reply(message: Message) -> None:

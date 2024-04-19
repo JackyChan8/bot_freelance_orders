@@ -22,6 +22,7 @@ class Reviews(Base):
     author: Mapped[int] = mapped_column(ForeignKey('users.id'))
     message: Mapped[str] = mapped_column(Text, nullable=False)
     rating: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    is_publish: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(Date, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(Date, default=func.now(), onupdate=func.now())
 

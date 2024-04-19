@@ -79,7 +79,7 @@ async def apply_promo_code_inline_keyboard(promo_code_id: int) -> InlineKeyboard
         ]
     )
 
-# =================================================================
+# ================================================================= About Us
 
 
 async def about_us_inline_keyboard() -> InlineKeyboardMarkup:
@@ -93,10 +93,22 @@ async def about_us_inline_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+# ================================================================= Reviews
+
 async def reviews_menu_inline_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='Оставить Отзыв', callback_data='add_review')],
             [InlineKeyboardButton(text='Показать Отзывы', callback_data='show_review')],
         ],
+    )
+
+
+async def reviews_add_rating() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text=str(num), callback_data=f'review_rating_{num}')
+            ] for num in range(1, 6)
+        ]
     )

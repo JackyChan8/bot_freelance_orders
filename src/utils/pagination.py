@@ -7,8 +7,9 @@ from services import services as service_user
 
 
 paginationTypeText: dict = {
-    'order': ('📦 Заказ', service_user.get_my_orders),
-    'promocode': ('🎟 Промокод', service_user.get_promo_codes),
+    'order': ('📦 Заказ', service_user.get_my_orders, 'back_to_profile'),
+    'promocode': ('🎟 Промокод', service_user.get_promo_codes, 'back_to_profile'),
+    'review': ('🗒 Отзыв', service_user.get_reviews, 'our_reviews'),
 }
 
 
@@ -18,7 +19,8 @@ class Pagination(CallbackData, prefix="pag"):
     type: str  # Тип Пагинации
 
 
-async def pagination(data: list, type_: str, message: Message, page=0) -> None:
+async def pagination(data: list, type_: str, message: Message,
+                     page: int = 0, callback_back: str = 'back_to_profile') -> None:
     builder = InlineKeyboardBuilder()
     start_offset: int = page * 3
     limit: int = 3
@@ -46,7 +48,7 @@ async def pagination(data: list, type_: str, message: Message, page=0) -> None:
             InlineKeyboardButton(text="➡️", callback_data=Pagination(action="next", page=page + 1, type=type_).pack())
         )
     builder.row(*buttons_row)
-    builder.row(InlineKeyboardButton(text='« Назад', callback_data='back_to_profile'))
+    builder.row(InlineKeyboardButton(text='« Назад', callback_data=callback_back))
     await message.answer(
         f'Ваши {type_text.split(' ')[-1]}ы:',
         reply_markup=builder.as_markup()
