@@ -19,7 +19,8 @@ from utils.keyboards.inline import user as user_inline_keyboard
 router = Router(name='users')
 
 
-async def add_referral_link(user_id: int, referral_id: int, exist_user: bool, message: Message, session: AsyncSession):
+async def add_referral_link(user_id: int, referral_id: int, exist_user: bool, message: Message,
+                            session: AsyncSession) -> None:
     """Added Referral Link"""
     if referral_id == user_id:
         await message.answer(user_text.NOT_USE_SELF_REFERRAL_LINK)
@@ -42,7 +43,7 @@ async def get_referral_users(user_id: int, callback: CallbackQuery, session: Asy
     return '\n'.join([f'@{member.user.username}' for member in chat_members])
 
 
-async def delete_before_message(callback: CallbackQuery):
+async def delete_before_message(callback: CallbackQuery) -> None:
     """Delete Before Message"""
     await callback.message.delete()
 
@@ -190,7 +191,7 @@ async def user_create_order_tech_task_upload_finish(message: Message, state: FSM
 
 
 @router.callback_query(~IsAdmin(), F.data == 'my_orders')
-async def user_get_my_orders(callback: CallbackQuery, session: AsyncSession):
+async def user_get_my_orders(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get My Orders Command Inline"""
     orders = await service_user.get_my_orders(callback.from_user.id, session)
     if orders:
@@ -201,12 +202,23 @@ async def user_get_my_orders(callback: CallbackQuery, session: AsyncSession):
 
 
 @router.callback_query(~IsAdmin(), F.data.startswith('order_user_№'))
-async def user_get_my_order(callback: CallbackQuery, session: AsyncSession):
+async def user_get_my_order(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get Information Order Command Inline"""
     user_id: int = callback.from_user.id
     order_id: int = int(callback.data.split('№')[-1])
+    # Get Order
     order = await service_user.get_my_order(user_id, order_id, session)
-    text: str = await user_text.show_info_order(order_id, order.type, order.status, order.description, order.created_at)
+    # Get Discount Promo Code to Order
+    discount = await service_user.get_promo_code_for_order(order_id, session)
+    # Generate Text
+    text: str = await user_text.show_info_order(
+        order_id,
+        order.type,
+        order.status,
+        order.description,
+        order.created_at,
+        discount,
+    )
     # Attach File Tech Task
     buttons = None
     if order.tech_task_filename:
@@ -229,7 +241,7 @@ async def user_found_partners_command_reply(message: Message) -> None:
 
 
 @router.callback_query(~IsAdmin(), (F.data == 'referral_systems') | (F.data == 'back_to_referral_history'))
-async def referral_system_info(callback: CallbackQuery, session: AsyncSession):
+async def referral_system_info(callback: CallbackQuery, session: AsyncSession) -> None:
     """Referral System Command Inline"""
     await delete_before_message(callback)
     users = ''
@@ -247,7 +259,7 @@ async def referral_system_info(callback: CallbackQuery, session: AsyncSession):
 
 
 @router.callback_query(~IsAdmin(), F.data == 'referral_history_pay')
-async def referral_system_history_pay(callback: CallbackQuery, session: AsyncSession):
+async def referral_system_history_pay(callback: CallbackQuery) -> None:
     """Referral System History Accrual Command Inline"""
     await delete_before_message(callback)
     count_pay = 0
@@ -258,15 +270,79 @@ async def referral_system_history_pay(callback: CallbackQuery, session: AsyncSes
     )
 
 
+# ================================================================= Promo Code
+@router.callback_query(~IsAdmin(), F.data == 'my_promo_codes')
+async def user_my_promo_codes_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Get My Promo Codes Command Inline"""
+    user_id: int = callback.from_user.id
+    # Get Promo Codes
+    promo_codes = await service_user.get_promo_codes(user_id, session)
+    if promo_codes:
+        await delete_before_message(callback)
+        await pagination(data=promo_codes, type_='promocode', message=callback.message)
+    else:
+        await callback.message.answer(user_text.NOT_EXISTS_PROMO_CODES)
+
+
+@router.callback_query(~IsAdmin(), F.data.startswith('promocode_user_№'))
+async def user_get_my_promo_code_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Get Information Order Command Inline"""
+    user_id: int = callback.from_user.id
+    promo_code_id: int = int(callback.data.split('№')[-1])
+    # Get Promo Code
+    promo_code = await service_user.get_my_promo_code(user_id, promo_code_id, session)
+    # Generate text
+    text: str = await user_text.show_info_promo_code(
+        promo_code_id, promo_code.discount, promo_code.created_at
+    )
+    buttons = await user_inline_keyboard.apply_promo_code_inline_keyboard(promo_code_id)
+    await callback.message.answer(text, reply_markup=buttons, parse_mode=ParseMode.HTML)
+
+
+@router.callback_query(~IsAdmin(), F.data.startswith('apply_promo_code_'))
+async def user_apply_promo_code_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Output Orders for applying Promo Code"""
+    promo_code_id: int = int(callback.data.split('_')[-1])
+    # Get Orders
+    orders = await service_user.get_my_orders(callback.from_user.id, session)
+    if orders:
+        await delete_before_message(callback)
+        await pagination(data=orders, type_=f'promocode_order_{promo_code_id}', message=callback.message)
+    else:
+        await callback.message.answer(user_text.NOT_EXISTS_ORDERS)
+
+
+@router.callback_query(~IsAdmin(), F.data.startswith('promocode_order_'))
+async def user_promo_code_choose_order(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Choose Order for applying Promo Code"""
+    data = callback.data.split('_')
+    user_id: int = callback.from_user.id
+    promo_code_id: int = int(data[2])
+    order_id: int = int(data[-1][1:])
+    # Check Exists Promo Code Apply Order
+    exist_promo_code = await service_user.check_exists_promo_code_order(user_id, order_id, session)
+    if exist_promo_code:
+        await callback.message.answer(user_text.PROMO_CODE_EXIST_ORDER)
+        return
+    # Added to Promo Code Order ID
+    await service_user.apply_promo_code(user_id, promo_code_id, order_id, callback.message, session)
+    await user_profile_command_inline(callback, session)
+
+
 # ================================================================= Navigation
+
+
 @router.callback_query(~IsAdmin(), Pagination.filter())
-async def pagination_handler(callback: CallbackQuery, callback_data: Pagination, session: AsyncSession):
+async def pagination_handler(callback: CallbackQuery, callback_data: Pagination, session: AsyncSession) -> None:
     """Pagination Handler"""
     await delete_before_message(callback)
     page: int = callback_data.page
     type_: str = callback_data.type
-    data = await paginationTypeText.get(type_)[1](callback.from_user.id, session)
-    await pagination(data=data, type_='order', message=callback.message, page=page)
+    # Get Data for pagination
+    data = await paginationTypeText.get(
+        type_,
+        paginationTypeText.get('order'))[1](callback.from_user.id, session)
+    await pagination(data=data, type_=type_, message=callback.message, page=page)
 
 
 # =================================================================
@@ -285,7 +361,7 @@ async def user_about_us_command_reply(message: Message) -> None:
 
 
 @router.callback_query(~IsAdmin(), F.data == 'our_reviews')
-async def user_our_reviews_inline(callback: CallbackQuery):
+async def user_our_reviews_inline(callback: CallbackQuery) -> None:
     buttons = await user_inline_keyboard.reviews_menu_inline_keyboard()
     await callback.message.answer(user_text.REVIEWS_TEXT, reply_markup=buttons)
 

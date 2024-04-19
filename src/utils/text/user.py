@@ -1,3 +1,4 @@
+from typing import Optional
 from aiogram.utils.formatting import Bold
 
 from config import settings
@@ -63,14 +64,15 @@ NOT_EXISTS_ORDERS = 'У вас нет заказов'
 
 
 async def show_info_order(order_id: int, order_type: str, order_status: str,
-                          description: str, order_created: str) -> str:
+                          description: str, order_created: str, discount: Optional[int] = None) -> str:
     """Show Information by Order"""
     return f"""
 #️⃣ <b>Номер Заказа:</b> {order_id}
-🏷 <b>Тип:</b> {order_type}
+📑 <b>Тип:</b> {order_type}
 {EMOJI_STATUS.get(order_status)} <b>Статус:</b> {order_status}
 📄 <b>Описание:</b> {description}
-🕔 <b>Время Создания:</b> {order_created}"""
+🏷 <b>Промокод:</b> {f'{discount}%' if discount else 'Отсутствует'}
+🕔 <b>Дата Создания:</b> {order_created}"""
 # ================================================================= Referral System
 
 FOUND_PARTNERS_TEXT = """
@@ -101,6 +103,19 @@ REFERRAL_SYSTEM_HISTORY_PAY = """
 История начислений:
 """
 
+# ================================================================= Promo Codes
+NOT_EXISTS_PROMO_CODES = 'У вас нет промокодов'
+PROMO_CODE_EXIST_ORDER = '❗️ Вы не можете применить несколько промокодов для одного заказа ❗️'
+PROMO_CODE_SUCCESS_APPLY = '🎉 Промокод успешно использован 🎉'
+
+
+async def show_info_promo_code(promo_code_id: int, discount: int, promo_code_created: str) -> str:
+    """Show Information by Promo Code"""
+    return f"""
+#️⃣ <b>Номер Промокода:</b> {promo_code_id}
+🏷 <b>Скидка:</b> {discount}%
+🕔 <b>Дата Создания:</b> {promo_code_created}
+"""
 # =================================================================
 
 ABOUT_US_TEXT = """

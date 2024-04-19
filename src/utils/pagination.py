@@ -7,7 +7,8 @@ from services import services as service_user
 
 
 paginationTypeText: dict = {
-    'order': ('📦 Заказ', service_user.get_my_orders)
+    'order': ('📦 Заказ', service_user.get_my_orders),
+    'promocode': ('🎟 Промокод', service_user.get_promo_codes),
 }
 
 
@@ -23,10 +24,15 @@ async def pagination(data: list, type_: str, message: Message, page=0) -> None:
     limit: int = 3
     end_offset: int = start_offset + limit
 
+    type_text = paginationTypeText.get(
+        type_,
+        paginationTypeText.get('order')
+    )[0]
+
     for data_id in data[start_offset:end_offset]:
         builder.row(
             InlineKeyboardButton(
-                text=f'{paginationTypeText.get(type_)[0]} №{data_id}', callback_data=f'order_user_№{data_id}'
+                text=f'{type_text} №{data_id}', callback_data=f'{type_}_user_№{data_id}'
             )
         )
 
@@ -41,4 +47,7 @@ async def pagination(data: list, type_: str, message: Message, page=0) -> None:
         )
     builder.row(*buttons_row)
     builder.row(InlineKeyboardButton(text='« Назад', callback_data='back_to_profile'))
-    await message.answer('Ваши Заказы:', reply_markup=builder.as_markup())
+    await message.answer(
+        f'Ваши {type_text.split(' ')[-1]}ы:',
+        reply_markup=builder.as_markup()
+    )

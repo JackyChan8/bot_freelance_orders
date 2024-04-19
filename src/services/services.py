@@ -1,9 +1,11 @@
 from aiogram.types import Message
-from sqlalchemy import select, insert, exists, func, desc
+from sqlalchemy import select, insert, update, exists, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.expression import true, false
 
-from models import Users, Orders, ReferralSystem
+from models import Users, Orders, ReferralSystem, PromoCode
 from utils.text import user as user_text
+from utils.text import admin as admin_text
 from utils.keyboards.reply import user as user_reply_keyboard
 
 
@@ -129,3 +131,93 @@ async def create_refer_link(user_id: int, referral_id: int, session: AsyncSessio
     except Exception:
         await session.rollback()
         return False
+
+
+# ================================================================= Promo Code
+async def create_promo_code(user_id: int, discount: int, message: Message, session: AsyncSession) -> None:
+    """Create Promo Code Service"""
+    query = (
+        insert(PromoCode)
+        .values(
+            user_id=user_id,
+            discount=discount,
+        )
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(admin_text.PROMO_CODE_CREATE)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при создании промокода')
+        await message.answer(str(exc))
+
+
+async def check_exists_promo_code_order(user_id: int, order_id: int, session: AsyncSession) -> bool:
+    """Check Exist Active Promo Code in Order"""
+    result = await session.execute(
+        select(exists(PromoCode.id))
+        .where(
+            PromoCode.user_id == user_id,
+            PromoCode.order_id == order_id
+        )
+    )
+    return result.scalar()
+
+
+async def get_promo_code_for_order(order_id: int, session: AsyncSession):
+    """Get Promo Code for Order"""
+    query = (
+        select(PromoCode.discount)
+        .where(PromoCode.order_id == order_id)
+    )
+    result = await session.execute(query)
+    return result.scalar()
+
+
+async def get_my_promo_code(user_id: int, promo_code_id: int, session: AsyncSession):
+    """Get My Promo Code Servicec"""
+    query = (
+        select(PromoCode)
+        .where(PromoCode.id == promo_code_id, PromoCode.user_id == user_id)
+    )
+    result = await session.execute(query)
+    return result.scalar()
+
+
+async def get_promo_codes(user_id: int, session: AsyncSession):
+    """Get Promo Codes Service"""
+    query = (
+        select(PromoCode.id)
+        .where(
+            PromoCode.user_id == user_id,
+            PromoCode.is_active == true(),
+        )
+    )
+    result = await session.execute(query)
+    return result.scalars().all()
+
+
+async def apply_promo_code(user_id: int, promo_code_id: int, order_id: int,
+                           message: Message, session: AsyncSession) -> None:
+    """Apply promo code to order"""
+    query = (
+        update(PromoCode)
+        .where(
+            PromoCode.id == promo_code_id,
+            PromoCode.user_id == user_id
+        )
+        .values(
+            is_active=false(),
+            order_id=order_id,
+        )
+        .execution_options(synchronize_session='fetch')
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(user_text.PROMO_CODE_SUCCESS_APPLY)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при добавлении заказа в промокод')
+        await message.answer(str(exc))

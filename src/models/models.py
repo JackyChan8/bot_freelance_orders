@@ -3,7 +3,7 @@ from typing import Optional, Literal, get_args
 
 from sqlalchemy.sql import func
 from sqlalchemy.orm import mapped_column, Mapped
-from sqlalchemy import Integer, BigInteger, String, Text, ForeignKey, CheckConstraint, Date, Enum
+from sqlalchemy import Integer, BigInteger, String, Text, Boolean, ForeignKey, CheckConstraint, Date, Enum
 
 from .base_class import Base
 
@@ -56,3 +56,17 @@ class ReferralSystem(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), unique=True)
     referral_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+
+
+class PromoCode(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    order_id: Mapped[int] = mapped_column(ForeignKey('orders.id'), nullable=True, default=None)
+    discount: Mapped[int] = mapped_column(Integer, default=5)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(Date, default=func.now())
+
+    __table_args__ = (
+        CheckConstraint(discount > 0, name='check_positive_discount'),
+        CheckConstraint(discount < 100, name='check_not_more_100_discount'),
+    )

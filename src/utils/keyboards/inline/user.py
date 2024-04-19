@@ -7,7 +7,6 @@ async def profile_inline_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text='Мои Заказы', callback_data='my_orders')],
             [InlineKeyboardButton(text='Создать Заказ', callback_data='create_orders')],
             [InlineKeyboardButton(text='Мои промокоды', callback_data='my_promo_codes')],
-            [InlineKeyboardButton(text='Активировать промокод', callback_data='active_promo_code')],
             [InlineKeyboardButton(text='Реферальная система', callback_data='referral_systems')],
         ]
     )
@@ -72,7 +71,16 @@ async def referral_history_pay_keyboards() -> InlineKeyboardMarkup:
     )
 
 
+# ================================================================= Promo Code
+async def apply_promo_code_inline_keyboard(promo_code_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='📮 Применить Промокод', callback_data=f'apply_promo_code_{promo_code_id}')]
+        ]
+    )
+
 # =================================================================
+
 
 async def about_us_inline_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
