@@ -16,9 +16,16 @@
 11. О команде (в разработке)
 12. Наш Сайт
 
-### Админка: (в разработке)
+### Админка:
+1. Заказы
+2. Промокоды
+3. Пользователи (в разработке)
+4. Отзывы
+5. Настройка (в разработке)
 
 ## Фотографии
+
+## Пользователь
 
 ### Главное меню:
 ![](./static/github/menu.png)
@@ -68,6 +75,58 @@
 ### О нас - Отзывы
 ![](./static/github/about_us_reviews.png)
 
+### О нас - Отзывы - Оставить Отзыв -- Сообщение
+![](./static/github/write_review.png)
+
+### О нас - Отзывы - Оставить Отзыв -- Рейтинг
+![](./static/github/write_review_rating.png)
+
+### О нас - Отзывы - Оставить Отзыв -- Успех
+![](./static/github/write_review_success.png)
+
+### О нас - Отзывы - Показать Отзывы
+![](./static/github/show_orders.png)
+
+### О нас - Отзывы - Показать Отзывы - Отзыв
+![](./static/github/show_order.png)
+
+## Администратор
+### Главное меню:
+![](./static/github/admin_menu.png)
+
+### Заказы:
+![](./static/github/admin_orders.png)
+
+### Заказы - (Новые Заказы, На Согласовании, В работе, На Тестировании, Завершенные):
+![](./static/github/new_orders.png)
+
+### Заказы - Заказ
+![](./static/github/admin_show_order.png)
+
+### Заказы - Заказ - Показать Заказчика
+![](./static/github/show_owner.png)
+
+### Заказы - Заказ - Изменить Статус
+![](./static/github/change_status_1.png)
+![](./static/github/change_status_2.png)
+
+### Промокоды
+![](./static/github/promocodes.png)
+
+### Промокоды - Создать промокод
+![](./static/github/create_promocode_1.png)
+![](./static/github/create_promocode_2.png)
+![](./static/github/create_promocode_3.png)
+
+### Отзывы
+![](./static/github/reviews.png)
+
+### Отзывы - Показать Отзывы
+![](./static/github/show_reviews.png)
+
+### Отзывы - Показать Отзывы - Отзыв
+![](./static/github/show_review_1.png)
+![](./static/github/show_review_2.png)
 
 ## Инструкция по запуску
 
