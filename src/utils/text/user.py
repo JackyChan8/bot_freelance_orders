@@ -59,6 +59,7 @@ CREATE_ORDER_TEXT_FINISH = """
 Мы свяжемся с вами в ближайшее время для уточнения деталей.
 """
 NOT_EXISTS_ORDERS = 'У вас нет заказов'
+NOTIFY_NEW_ORDER = 'ℹ️ Пришел новый заказ ℹ️'
 
 "<span style=\"color:#fc5252;\">text</span>"
 

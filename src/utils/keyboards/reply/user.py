@@ -7,7 +7,7 @@ async def start_reply_keyboard() -> ReplyKeyboardMarkup:
             [KeyboardButton(text='👤 Профиль')],
             [KeyboardButton(text='💎 Ищем партнёров!')],
             [KeyboardButton(text='💰 Цены'), KeyboardButton(text='‍💻 О нас')],
-            [KeyboardButton(text='📋 Правила'), KeyboardButton(text='🛠 Тех.поддержка')]
+            [KeyboardButton(text='🛠 Тех.поддержка')]
         ],
         resize_keyboard=True)
 

@@ -100,6 +100,7 @@ async def reviews_menu_inline_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(text='Оставить Отзыв', callback_data='add_review')],
             [InlineKeyboardButton(text='Показать Отзывы', callback_data='show_review')],
+            [InlineKeyboardButton(text='« Назад', callback_data='back_to_about_us')],
         ],
     )
 

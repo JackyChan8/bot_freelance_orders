@@ -7,7 +7,7 @@ from aiogram.client.bot import DefaultBotProperties
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
 from utils.default_commands import set_commands
-from handlers import user, admin, echo, cancel, file
+from handlers import user, admin, echo, cancel, file, pagination
 from middlewares import middlewares
 from config import settings
 
@@ -29,6 +29,7 @@ async def main():
     dp.include_router(user.router)
     dp.include_router(admin.router)
     dp.include_router(file.router)
+    dp.include_router(pagination.router)
     dp.include_router(echo.router)
 
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())

@@ -1,8 +1,12 @@
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 
 async def start_reply_keyboard() -> ReplyKeyboardMarkup:
-    builder = ReplyKeyboardBuilder()
-    builder.add(KeyboardButton(text='Is Admin'))
-    return builder.as_markup()
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text='📦 Заказы')],
+            [KeyboardButton(text='🎟 Промокоды'), KeyboardButton(text='👤 Пользователи')],
+            [KeyboardButton(text='#️⃣ Отзывы')],
+            [KeyboardButton(text='🛠 Настройка')]
+        ]
+    )
