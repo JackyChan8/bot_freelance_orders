@@ -1,7 +1,8 @@
 from aiogram import Router, F
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery, BufferedInputFile
+from aiogram.fsm.context import FSMContext
+from aiogram.types import Message, CallbackQuery
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,9 +10,11 @@ from services import services as service_admin
 from utils import utils_func
 from utils.filters import IsAdmin
 from utils.text import admin as admin_text
+from utils.keyboards.reply import user as user_reply_keyboard
 from utils.keyboards.inline import admin as admin_inline_keyboard
 from utils.keyboards.reply import admin as admin_reply_keyboard
 from utils.pagination import pagination
+from utils.states import admin as admin_states
 
 router = Router(name='admin')
 
@@ -118,7 +121,120 @@ async def admin_show_customer_order(callback: CallbackQuery, session: AsyncSessi
         await callback.message.answer(f'@{customer[1]}')
 
 
+# ================================================================= Promo Codes
+@router.message(IsAdmin(), F.text == '🎟 Промокоды')
+async def admin_promo_code_command_reply(message: Message) -> None:
+    """Promo Code Menu Reply Command"""
+    buttons = await admin_inline_keyboard.promo_code_inline_keyboards()
+    await message.answer(admin_text.PROMO_CODE_MENU_TEXT, reply_markup=buttons)
+
+
+@router.callback_query(IsAdmin(), F.data == 'back_to_promo_code')
+async def admin_promo_code_command_inline(callback: CallbackQuery) -> None:
+    """Promo Code Menu Inline Command"""
+    buttons = await admin_inline_keyboard.promo_code_inline_keyboards()
+    await callback.message.answer(admin_text.PROMO_CODE_MENU_TEXT, reply_markup=buttons)
+
+
+@router.callback_query(IsAdmin(), F.data == 'create_promo_code')
+async def admin_create_promo_code_inline_keyboard(callback: CallbackQuery, state: FSMContext) -> None:
+    """Create Promo Code Inline Keyboard"""
+    cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
+
+    await state.set_state(admin_states.PromoCodeStates.username)
+    await callback.message.answer(
+        **admin_text.SET_USERNAME_PROMO_CODE_TEXT.as_kwargs(),
+        reply_markup=cancel_button,
+    )
+
+
+@router.message(IsAdmin(), admin_states.PromoCodeStates.username, F.text.casefold() != 'отмена')
+async def admin_create_promo_code_username(message: Message, state: FSMContext, session: AsyncSession) -> None:
+    """Create Promo Code - Set username"""
+    if not message.text:
+        await message.answer(**admin_text.SET_USERNAME_PROMO_CODE_TEXT.as_kwargs())
+        return
+    # Check User Exists
+    exist_user: bool = await service_admin.check_exist_user_by_username(message.text, session)
+    if not exist_user:
+        await message.answer(admin_text.NOT_FOUND_USERNAME_PROMO_CODE_TEXT)
+        return
+
+    await state.update_data(username=message.text)
+    await state.set_state(admin_states.PromoCodeStates.discount)
+    await message.answer(**admin_text.SET_DISCOUNT_PROMO_CODE_TEXT.as_kwargs())
+
+
+@router.message(IsAdmin(), admin_states.PromoCodeStates.discount)
+async def admin_create_promo_code_username(message: Message, state: FSMContext, session: AsyncSession) -> None:
+    """Create Promo Code - Set Discount"""
+    if not message.text or not message.text.isdigit():
+        await message.answer(**admin_text.SET_DISCOUNT_PROMO_CODE_TEXT.as_kwargs())
+        return
+    discount: int = int(message.text)
+
+    # Check Valid Discount
+    if 0 >= discount or discount > 100:
+        await message.answer(admin_text.SET_DISCOUNT_PROMO_CODE_RANGE)
+        return
+
+    await state.update_data(discount=discount)
+    data: dict = await state.get_data()
+    await state.clear()
+
+    # Add To Database Promo Code
+    user_id: int = await service_admin.get_user_id_by_username(data.get('username'), session)
+    is_created: bool = await service_admin.create_promo_code(user_id, discount, message, session)
+    if is_created:
+        await message.bot.send_message(user_id, admin_text.NOTIFY_PROMO_CODE_SUCCESS_ADD.format(discount=discount))
+        await admin_start_command(message)
+
+
+@router.callback_query(IsAdmin(), F.data == 'show_promo_code')
+async def admin_show_promo_code_inline_keyboard(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Show Promo Code Inline Keyboard"""
+    # Get Promo Codes
+    promo_codes = await service_admin.get_promo_codes(session=session)
+    if promo_codes:
+        await utils_func.delete_before_message(callback)
+        await pagination(
+            data=promo_codes,
+            type_='promocode',
+            message=callback.message,
+            callback_back='back_to_promo_code',
+            callback_type='admin',
+        )
+    else:
+        await callback.message.answer(admin_text.NOT_EXISTS_PROMO_CODES)
+
+
+@router.callback_query(IsAdmin(), F.data.startswith('promocode_admin_№'))
+async def admin_get_promo_code(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Get Information Promo Code Command Inline"""
+    promo_code_id: int = int(callback.data.split('№')[-1])
+    # Get Promo code
+    promo_code = await service_admin.get_promo_code_by_id(promo_code_id, session)
+    # Output Information Promo Code
+    await utils_func.output_info_promo_code(promo_code_id, promo_code, callback.message, is_admin=True)
+
+
+@router.callback_query(IsAdmin(), F.data.startswith('delete_promo_code'))
+async def admin_delete_promo_code(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Delete Promo code Command Inline"""
+    promo_code_id: int = int(callback.data.split('_')[-1])
+    await service_admin.delete_promo_code(promo_code_id, callback.message, session)
+
+
+@router.callback_query(IsAdmin(), F.data.startswith('show_promo_code_user'))
+async def admin_show_user_promo_code(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Get the Owner of the Promo Code Command Inline"""
+    promo_code_id: int = int(callback.data.split('_')[-1])
+    customer = await service_admin.get_owner_promo_code(promo_code_id, session)
+    if customer:
+        await callback.message.answer(f'@{customer[1]}')
+
+
 # ================================================================= Users
 @router.message(IsAdmin(), F.text == '👤 Пользователи')
-async def admin_users_command_reply(message: Message, session: AsyncSession):
+async def admin_users_command_reply(message: Message, session: AsyncSession) -> None:
     pass

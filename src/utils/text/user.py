@@ -108,6 +108,7 @@ REFERRAL_SYSTEM_HISTORY_PAY = """
 NOT_EXISTS_PROMO_CODES = 'У вас нет промокодов'
 PROMO_CODE_EXIST_ORDER = '❗️ Вы не можете применить несколько промокодов для одного заказа ❗️'
 PROMO_CODE_SUCCESS_APPLY = '🎉 Промокод успешно использован 🎉'
+PROMO_CODE_IS_NOT_ACTIVE = '❗️ Промокод был удален ❗️'
 
 
 async def show_info_promo_code(promo_code_id: int, discount: int, promo_code_created: str) -> str:

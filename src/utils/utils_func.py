@@ -76,6 +76,22 @@ async def output_info_order(order_id: int, order, message: Message, session: Asy
     await message.answer(text, reply_markup=buttons, parse_mode=ParseMode.HTML)
 
 
+async def output_info_promo_code(
+        promo_code_id: int,
+        promo_code,
+        message: Message,
+        is_admin: bool = False):
+    """Output Information Promo Code"""
+    # Generate text
+    text: str = await user_text.show_info_promo_code(promo_code_id, promo_code.discount, promo_code.created_at)
+
+    if is_admin:
+        buttons = await admin_inline_keyboard.get_promo_code_info_inline_keyboard(promo_code_id)
+    else:
+        buttons = await user_inline_keyboard.apply_promo_code_inline_keyboard(promo_code_id)
+    await message.answer(text, reply_markup=buttons, parse_mode=ParseMode.HTML)
+
+
 async def send_bot_message(bot: Bot, chat_id: int, text: str) -> None:
     """Send Message Bot"""
     await bot.send_message(chat_id, text)

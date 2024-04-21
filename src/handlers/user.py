@@ -28,7 +28,7 @@ async def user_start_command(message: Message, command: CommandObject, session: 
     args: str = command.args
 
     # Added User To Database
-    exist_user: bool = await service_user.check_exist_user(user_id, session)
+    exist_user: bool = await service_user.check_exist_user_by_id(user_id, session)
     if not exist_user:
         await service_user.create_user(user_id, message.from_user.username, message, session)
 
@@ -243,7 +243,7 @@ async def user_my_promo_codes_command_inline(callback: CallbackQuery, session: A
     """Get My Promo Codes Command Inline"""
     user_id: int = callback.from_user.id
     # Get Promo Codes
-    promo_codes = await service_user.get_promo_codes(user_id, session)
+    promo_codes = await service_user.get_promo_codes_by_user_id(user_id, session)
     if promo_codes:
         await utils_func.delete_before_message(callback)
         await pagination(data=promo_codes, type_='promocode', message=callback.message)
@@ -253,17 +253,13 @@ async def user_my_promo_codes_command_inline(callback: CallbackQuery, session: A
 
 @router.callback_query(~IsAdmin(), F.data.startswith('promocode_user_№'))
 async def user_get_my_promo_code_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
-    """Get Information Order Command Inline"""
+    """Get Information Promo Code Command Inline"""
     user_id: int = callback.from_user.id
     promo_code_id: int = int(callback.data.split('№')[-1])
     # Get Promo Code
     promo_code = await service_user.get_my_promo_code(user_id, promo_code_id, session)
-    # Generate text
-    text: str = await user_text.show_info_promo_code(
-        promo_code_id, promo_code.discount, promo_code.created_at
-    )
-    buttons = await user_inline_keyboard.apply_promo_code_inline_keyboard(promo_code_id)
-    await callback.message.answer(text, reply_markup=buttons, parse_mode=ParseMode.HTML)
+    # Output Information Promo Code
+    await utils_func.output_info_promo_code(promo_code_id, promo_code, callback.message)
 
 
 @router.callback_query(~IsAdmin(), F.data.startswith('apply_promo_code_'))
@@ -290,6 +286,11 @@ async def user_promo_code_choose_order(callback: CallbackQuery, session: AsyncSe
     exist_promo_code = await service_user.check_exists_promo_code_order(user_id, order_id, session)
     if exist_promo_code:
         await callback.message.answer(user_text.PROMO_CODE_EXIST_ORDER)
+        return
+    # Check is Active Promo Code
+    is_active = await service_user.check_is_active_promo_code(promo_code_id, session)
+    if not is_active:
+        await callback.message.answer(user_text.PROMO_CODE_IS_NOT_ACTIVE)
         return
     # Added to Promo Code Order ID
     await service_user.apply_promo_code(user_id, promo_code_id, order_id, callback.message, session)

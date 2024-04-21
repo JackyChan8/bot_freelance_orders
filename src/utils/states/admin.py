@@ -1,5 +1,6 @@
 from aiogram.fsm.state import StatesGroup, State
 
 
-class AdminStates(StatesGroup):
-    pass
+class PromoCodeStates(StatesGroup):
+    username = State()
+    discount = State()

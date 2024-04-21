@@ -1,4 +1,6 @@
-from aiogram.types import Message
+from typing import Any
+
+from aiogram.types import Message, ReplyKeyboardRemove
 from sqlalchemy import select, insert, update, exists, func, desc, case, Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import true, false
@@ -11,11 +13,29 @@ from utils.utils_func import statuses
 
 
 # ================================================================= Users
-async def check_exist_user(user_id: int, session: AsyncSession) -> bool:
-    """Check Exists User"""
+async def check_exist_user_by_id(user_id: int, session: AsyncSession) -> bool:
+    """Check Exists User By ID"""
     result = await session.execute(
         select(exists(Users.id).where(Users.id == user_id))
     )
+    return result.scalar()
+
+
+async def check_exist_user_by_username(username: str, session: AsyncSession) -> bool:
+    """Check Exists User By Username"""
+    result = await session.execute(
+        select(exists(Users.id).where(Users.username == username))
+    )
+    return result.scalar()
+
+
+async def get_user_id_by_username(username: str, session: AsyncSession) -> int:
+    """Get User ID By Username"""
+    query = (
+        select(Users.id)
+        .where(Users.username == username)
+    )
+    result = await session.execute(query)
     return result.scalar()
 
 
@@ -70,7 +90,7 @@ async def get_orders_by_status(status: str, session: AsyncSession):
     return result.scalars().all()
 
 
-async def get_customer_by_order(order_id: int, session: AsyncSession) -> Row[tuple] | None:
+async def get_customer_by_order(order_id: int, session: AsyncSession) -> Row[tuple[Any, Any]] | None:
     """Get Customer by Order ID Service"""
     query = (
         select(Users.id, Users.username)
@@ -216,7 +236,7 @@ async def create_refer_link(user_id: int, referral_id: int, session: AsyncSessio
 
 
 # ================================================================= Promo Code
-async def create_promo_code(user_id: int, discount: int, message: Message, session: AsyncSession) -> None:
+async def create_promo_code(user_id: int, discount: int, message: Message, session: AsyncSession) -> bool:
     """Create Promo Code Service"""
     query = (
         insert(PromoCode)
@@ -228,11 +248,13 @@ async def create_promo_code(user_id: int, discount: int, message: Message, sessi
     try:
         await session.execute(query)
         await session.commit()
-        await message.answer(admin_text.PROMO_CODE_CREATE)
+        await message.answer(admin_text.PROMO_CODE_CREATE_TEXT)
+        return True
     except Exception as exc:
         await session.rollback()
-        await message.answer('Произошла ошибка при создании промокода')
+        await message.answer('Произошла ошибка при создании промокода', reply_markup=ReplyKeyboardRemove())
         await message.answer(str(exc))
+        return False
 
 
 async def check_exists_promo_code_order(user_id: int, order_id: int, session: AsyncSession) -> bool:
@@ -242,6 +264,18 @@ async def check_exists_promo_code_order(user_id: int, order_id: int, session: As
         .where(
             PromoCode.user_id == user_id,
             PromoCode.order_id == order_id
+        )
+    )
+    return result.scalar()
+
+
+async def check_is_active_promo_code(promo_code_id: int, session: AsyncSession) -> bool:
+    """Check is Active Promo Code"""
+    result = await session.execute(
+        select(exists(PromoCode.id))
+        .where(
+            PromoCode.id == promo_code_id,
+            PromoCode.is_active == true(),
         )
     )
     return result.scalar()
@@ -267,14 +301,46 @@ async def get_my_promo_code(user_id: int, promo_code_id: int, session: AsyncSess
     return result.scalar()
 
 
-async def get_promo_codes(user_id: int, session: AsyncSession):
-    """Get Promo Codes Service"""
+async def get_promo_codes_by_user_id(user_id: int, session: AsyncSession):
+    """Get Promo Codes By User ID Service"""
     query = (
         select(PromoCode.id)
         .where(
             PromoCode.user_id == user_id,
             PromoCode.is_active == true(),
         )
+    )
+    result = await session.execute(query)
+    return result.scalars().all()
+
+
+async def get_owner_promo_code(promo_code_id: int, session: AsyncSession) -> Row[tuple[Any, Any]] | None:
+    """Get Information Owner by Promo Code"""
+    query = (
+        select(Users.id, Users.username)
+        .select_from(PromoCode)
+        .join(Users, Users.id == PromoCode.user_id)
+        .where(PromoCode.id == promo_code_id)
+    )
+    result = await session.execute(query)
+    return result.first()
+
+
+async def get_promo_code_by_id(promo_code_id: int, session: AsyncSession):
+    """Get Promo Code By ID Service"""
+    query = (
+        select(PromoCode)
+        .where(PromoCode.id == promo_code_id)
+    )
+    result = await session.execute(query)
+    return result.scalar()
+
+
+async def get_promo_codes(*args, session: AsyncSession):
+    """Get Promo Codes Service"""
+    query = (
+        select(PromoCode.id)
+        .where(PromoCode.is_active == true())
     )
     result = await session.execute(query)
     return result.scalars().all()
@@ -302,6 +368,24 @@ async def apply_promo_code(user_id: int, promo_code_id: int, order_id: int,
     except Exception as exc:
         await session.rollback()
         await message.answer('Произошла ошибка при добавлении заказа в промокод')
+        await message.answer(str(exc))
+
+
+async def delete_promo_code(promo_code_id: int, message: Message, session: AsyncSession) -> None:
+    """Delete promo code"""
+    query = (
+        update(PromoCode)
+        .where(PromoCode.id == promo_code_id)
+        .values(is_active=false())
+        .execution_options(synchronize_session='fetch')
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(admin_text.DELETE_PROMO_CODE_TEXT)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при удалении промокода')
         await message.answer(str(exc))
 
 

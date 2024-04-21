@@ -3,6 +3,8 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
+# ================================================================= Orders
+
 async def orders_inline_keyboard(order_id: Optional[int] = None) -> InlineKeyboardMarkup:
     callback_text = 'show_orders'
     if order_id:
@@ -39,3 +41,30 @@ async def get_order_info_inline_keyboard(order_id: int, is_task: bool = False) -
         width=1
     )
     return builder.as_markup()
+
+
+# ================================================================= Promo Codes
+async def promo_code_inline_keyboards():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='Показать промокоды', callback_data='show_promo_code')
+            ],
+            [
+                InlineKeyboardButton(text='Создать промокод', callback_data=f'create_promo_code'),
+            ],
+        ]
+    )
+
+
+async def get_promo_code_info_inline_keyboard(promo_code_id: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='❌ Удалить промокод', callback_data=f'delete_promo_code_{promo_code_id}')
+            ],
+            [
+                InlineKeyboardButton(text='👤 Показать Владельца', callback_data=f'show_promo_code_user_{promo_code_id}'),
+            ],
+        ]
+    )

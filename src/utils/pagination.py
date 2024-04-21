@@ -4,20 +4,20 @@ from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardButton
 from aiogram.types import Message
 
-from services import services as service_user
+from services import services
 
 
 paginationTypeText: dict = {
     'order': {
-        'user': ('📦 Заказ', service_user.get_my_orders, 'back_to_profile'),
-        'admin': ('📦 Заказ', service_user.get_orders_by_status, 'back_to_orders'),
+        'user': ('📦 Заказ', services.get_my_orders, 'back_to_profile'),
+        'admin': ('📦 Заказ', services.get_orders_by_status, 'back_to_orders'),
     },
     'promocode': {
-        'user': ('🎟 Промокод', service_user.get_promo_codes, 'back_to_profile'),
-        'admin': (),
+        'user': ('🎟 Промокод', services.get_promo_codes_by_user_id, 'back_to_profile'),
+        'admin': ('🎟 Промокод', services.get_promo_codes, 'back_to_promo_code'),
     },
     'review': {
-        'user': ('🗒 Отзыв', service_user.get_reviews, 'our_reviews'),
+        'user': ('🗒 Отзыв', services.get_reviews, 'our_reviews'),
         'admin': (),
     }
 }
@@ -43,15 +43,15 @@ async def pagination(data: list,
     limit: int = 3
     end_offset: int = start_offset + limit
 
-    type_text = paginationTypeText.get(
+    pagination_type = paginationTypeText.get(
         type_,
-        paginationTypeText.get('order').get(callback_type)
+        paginationTypeText.get('order')
     ).get(callback_type)[0]
 
     for data_id in data[start_offset:end_offset]:
         builder.row(
             InlineKeyboardButton(
-                text=f'{type_text} №{data_id}', callback_data=f'{type_}_{callback_type}_№{data_id}'
+                text=f'{pagination_type} №{data_id}', callback_data=f'{type_}_{callback_type}_№{data_id}'
             )
         )
 
@@ -84,6 +84,6 @@ async def pagination(data: list,
     builder.row(*buttons_row)
     builder.row(InlineKeyboardButton(text='« Назад', callback_data=callback_back))
     await message.answer(
-        f'Ваши {type_text.split(' ')[-1]}ы:',
+        f'Ваши {pagination_type.split(' ')[-1]}ы:',
         reply_markup=builder.as_markup()
     )
