@@ -360,7 +360,7 @@ async def user_create_review_rating(callback: CallbackQuery, state: FSMContext, 
 @router.callback_query(~IsAdmin(), F.data == 'show_review')
 async def user_show_reviews(callback: CallbackQuery, session: AsyncSession) -> None:
     """Show reviews Inline Command"""
-    reviews = await service_user.get_reviews(callback.from_user.id, session)
+    reviews = await service_user.get_reviews_by_user_id(callback.from_user.id, session)
     if reviews:
         await utils_func.delete_before_message(callback)
         await pagination(data=reviews, type_='review', message=callback.message, callback_back='our_reviews')
@@ -372,14 +372,8 @@ async def user_show_reviews(callback: CallbackQuery, session: AsyncSession) -> N
 async def user_get_review(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get Reviews"""
     review_id: int = int(callback.data.split('№')[-1])
-    # Get Review
-    review = await service_user.get_review(review_id, session)
-    # Get Author Review Username
-    review_author = await callback.bot.get_chat_member(review.author, review.author)
-    # Generate Text
-    text: str = await user_text.show_info_review(
-        review_id, review_author.user.username, review.message, review.rating, review.created_at)
-    await callback.message.answer(text, parse_mode=ParseMode.HTML)
+    # Output Information Promo Code
+    await utils_func.output_info_review(review_id, callback.message, session)
 
 
 # =================================================================

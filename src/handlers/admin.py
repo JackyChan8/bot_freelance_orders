@@ -237,4 +237,59 @@ async def admin_show_user_promo_code(callback: CallbackQuery, session: AsyncSess
 # ================================================================= Users
 @router.message(IsAdmin(), F.text == '👤 Пользователи')
 async def admin_users_command_reply(message: Message, session: AsyncSession) -> None:
+    """Users Menu Reply Command"""
     pass
+
+
+# ================================================================= Reviews
+@router.message(IsAdmin(), F.text == '#️⃣ Отзывы')
+async def admin_reviews_command_reply(message: Message) -> None:
+    """Reviews Menu Reply Command"""
+    buttons = await admin_inline_keyboard.reviews_inline_keyboards()
+    await message.answer(admin_text.REVIEWS_MENU_TEXT, reply_markup=buttons)
+
+
+@router.callback_query(IsAdmin(), F.data == 'back_to_reviews')
+async def admin_reviews_command_inline(callback: CallbackQuery) -> None:
+    """Reviews Menu Inline Command"""
+    buttons = await admin_inline_keyboard.reviews_inline_keyboards()
+    await callback.message.answer(admin_text.REVIEWS_MENU_TEXT, reply_markup=buttons)
+
+
+@router.callback_query(IsAdmin(), F.data == 'show_reviews')
+async def admin_show_reviews_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Show Reviews Inline Command"""
+    reviews = await service_admin.get_reviews(session=session)
+    if reviews:
+        await utils_func.delete_before_message(callback)
+        await pagination(
+            data=reviews,
+            type_='review',
+            message=callback.message,
+            callback_back='back_to_reviews',
+            callback_type='admin',
+        )
+    else:
+        await callback.message.answer(admin_text.NOT_EXISTS_REVIEWS)
+
+
+@router.callback_query(IsAdmin(), F.data.startswith('review_admin_№'))
+async def admin_get_review(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Get Review Command Inline"""
+    review_id: int = int(callback.data.split('№')[-1])
+    # Output Information Promo Code
+    await utils_func.output_info_review(review_id, callback.message, session, is_admin=True)
+
+
+@router.callback_query(IsAdmin(), F.data.startswith('remove_public_review_'))
+async def admin_remove_from_publish_review_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Remove From Publication Review Command Inline"""
+    review_id: int = int(callback.data.split('_')[-1])
+    await service_admin.update_review_by_id(review_id, False, callback.message, session)
+
+
+@router.callback_query(IsAdmin(), F.data.startswith('add_public_review_'))
+async def admin_publish_review_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Publication Review Command Inline"""
+    review_id: int = int(callback.data.split('_')[-1])
+    await service_admin.update_review_by_id(review_id, True, callback.message, session)

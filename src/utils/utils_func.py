@@ -92,6 +92,31 @@ async def output_info_promo_code(
     await message.answer(text, reply_markup=buttons, parse_mode=ParseMode.HTML)
 
 
+async def output_info_review(
+        review_id: int,
+        message: Message,
+        session: AsyncSession,
+        is_admin: bool = False) -> None:
+    """Output Information Review"""
+    # Get Review
+    review = await service_user.get_review_by_id(review_id, session)
+    # Get Author Review Username
+    review_author = await message.bot.get_chat_member(review.author, review.author)
+    # Generate Text
+    text: str = await user_text.show_info_review(
+        review.id,
+        review_author.user.username,
+        review.message,
+        review.rating,
+        review.created_at
+    )
+    # Generate Buttons
+    buttons = None
+    if is_admin:
+        buttons = await admin_inline_keyboard.get_review_info_inline_keyboard(review.id, review.is_publish)
+    await message.answer(text, reply_markup=buttons, parse_mode=ParseMode.HTML)
+
+
 async def send_bot_message(bot: Bot, chat_id: int, text: str) -> None:
     """Send Message Bot"""
     await bot.send_message(chat_id, text)

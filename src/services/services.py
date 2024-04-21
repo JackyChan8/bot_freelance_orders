@@ -411,8 +411,14 @@ async def create_review(user_id: int, text: str, rating: int, message: Message, 
         await message.answer(str(exc), reply_markup=buttons)
 
 
-async def get_reviews(user_id: int, session: AsyncSession):
+async def get_reviews(*args, session: AsyncSession):
     """Get Reviews Service"""
+    result = await session.execute(select(Reviews.id))
+    return result.scalars().all()
+
+
+async def get_reviews_by_user_id(user_id: int, session: AsyncSession):
+    """Get Reviews By User ID Service"""
     query = (
         select(Reviews.id)
         .where(Reviews.is_publish == true(), Reviews.author != user_id)
@@ -421,8 +427,8 @@ async def get_reviews(user_id: int, session: AsyncSession):
     return result.scalars().all()
 
 
-async def get_review(review_id: int, session: AsyncSession):
-    """Get Review Service"""
+async def get_review_by_id(review_id: int, session: AsyncSession):
+    """Get Review By ID Service"""
     query = (
         select(Reviews)
         .where(Reviews.id == review_id)
@@ -430,3 +436,27 @@ async def get_review(review_id: int, session: AsyncSession):
     result = await session.execute(query)
     return result.scalar()
 
+
+async def update_review_by_id(review_id: int, is_publish: bool, message: Message, session: AsyncSession) -> None:
+    """Publish / UnPublish Review By ID"""
+    text: str = await admin_text.update_review(is_publish)
+    is_publish = true() if is_publish else false()
+
+    query = (
+        update(Reviews)
+        .where(
+            Reviews.id == review_id,
+        )
+        .values(
+            is_publish=is_publish,
+        )
+        .execution_options(synchronize_session='fetch')
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(text)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при изменении отзыва')
+        await message.answer(str(exc))

@@ -44,7 +44,7 @@ async def get_order_info_inline_keyboard(order_id: int, is_task: bool = False) -
 
 
 # ================================================================= Promo Codes
-async def promo_code_inline_keyboards():
+async def promo_code_inline_keyboards() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -57,7 +57,7 @@ async def promo_code_inline_keyboards():
     )
 
 
-async def get_promo_code_info_inline_keyboard(promo_code_id: int):
+async def get_promo_code_info_inline_keyboard(promo_code_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -68,3 +68,27 @@ async def get_promo_code_info_inline_keyboard(promo_code_id: int):
             ],
         ]
     )
+
+
+# ================================================================= Reviews
+async def reviews_inline_keyboards() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='#️⃣ Показать Отзывы', callback_data=f'show_reviews')
+            ]
+        ]
+    )
+
+
+async def get_review_info_inline_keyboard(review_id: int, is_publish: bool) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    if is_publish:
+        builder.row(
+            InlineKeyboardButton(text='⬇️ Снять с публикации', callback_data=f'remove_public_review_{review_id}')
+        )
+    else:
+        builder.row(
+            InlineKeyboardButton(text='⬆️ Опубликовать', callback_data=f'add_public_review_{review_id}')
+        )
+    return builder.as_markup()

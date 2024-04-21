@@ -17,8 +17,8 @@ paginationTypeText: dict = {
         'admin': ('🎟 Промокод', services.get_promo_codes, 'back_to_promo_code'),
     },
     'review': {
-        'user': ('🗒 Отзыв', services.get_reviews, 'our_reviews'),
-        'admin': (),
+        'user': ('🗒 Отзыв', services.get_reviews_by_user_id, 'our_reviews'),
+        'admin': ('🗒 Отзыв', services.get_reviews, 'back_to_reviews'),
     }
 }
 
