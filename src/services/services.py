@@ -272,7 +272,7 @@ async def create_promo_code(user_id: int, discount: int, message: Message, sessi
 async def get_count_promo_codes(*args, session: AsyncSession) -> int:
     """Get Count Promo Codes"""
     result = await session.execute(
-        select(func.count('*')).select_from(PromoCode)
+        select(func.count('*')).select_from(PromoCode).where(PromoCode.is_active == true())
     )
     return result.scalar()
 
@@ -282,7 +282,10 @@ async def get_count_promo_codes_by_user_id(user_id: int, session: AsyncSession) 
     result = await session.execute(
         select(func.count('*'))
         .select_from(PromoCode)
-        .where(PromoCode.user_id == user_id)
+        .where(
+            PromoCode.user_id == user_id,
+            PromoCode.is_active == true(),
+        )
     )
     return result.scalar()
 
