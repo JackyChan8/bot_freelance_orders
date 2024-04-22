@@ -19,23 +19,19 @@ async def pagination_handler(callback: CallbackQuery, callback_data: Pagination,
     type_user: str = callback_data.permission
     status: Optional[str] = callback_data.status
 
-    # Get From Database Data
+    # Get Pagination Type
     pagination_type: tuple = paginationTypeText.get(
         type_,
         paginationTypeText.get('order')
     ).get(type_user)
-    if type_user == 'admin':
-        data = await pagination_type[1](status, session=session)
-    else:
-        data = await pagination_type[1](callback.from_user.id, session)
-    callback_data: str = pagination_type[2]
     await pagination(
-        data=data,
         page=page,
         type_=type_,
         status=status,
+        session=session,
         message=callback.message,
-        callback_back=callback_data,
+        callback_back=pagination_type[2],
         callback_type=type_user,
+        user_id=callback.from_user.id,
     )
 

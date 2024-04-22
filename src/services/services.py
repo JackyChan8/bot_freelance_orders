@@ -3,7 +3,7 @@ from typing import Any
 from aiogram.types import Message, ReplyKeyboardRemove
 from sqlalchemy import select, insert, update, exists, func, desc, case, Row
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql.expression import true, false
+from sqlalchemy.sql.expression import true, false, null
 
 from models import Users, Orders, ReferralSystem, PromoCode, Reviews
 from utils.text import user as user_text
@@ -55,10 +55,18 @@ async def create_user(user_id: int, username: str, message: Message, session: As
 
 
 # ================================================================= Orders
-async def get_count_orders(user_id: int, session: AsyncSession) -> int:
-    """Get Count Orders Service"""
+async def get_count_orders_by_user_id(user_id: int, session: AsyncSession) -> int:
+    """Get Count Orders By User ID Service"""
     result = await session.execute(
         select(func.count("*")).select_from(Orders).where(Orders.customer == user_id)
+    )
+    return result.scalar()
+
+
+async def get_count_orders_by_status(status: str, session: AsyncSession) -> int:
+    """Get Count Orders By Status Service"""
+    result = await session.execute(
+        select(func.count('*')).select_from(Orders).where(Orders.status == statuses.get(status))
     )
     return result.scalar()
 
@@ -79,11 +87,13 @@ async def get_count_by_status(session: AsyncSession):
     return result.fetchone()
 
 
-async def get_orders_by_status(status: str, session: AsyncSession):
+async def get_orders_by_status(status: str, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Orders by Status"""
     query = (
         select(Orders.id)
         .where(Orders.status == statuses.get(status))
+        .limit(limit)
+        .offset(offset)
         .order_by(desc(Orders.id))
     )
     result = await session.execute(query)
@@ -142,11 +152,13 @@ async def get_order_status(order_id: int, session: AsyncSession):
     return result.scalar()
 
 
-async def get_my_orders(user_id: int, session: AsyncSession):
+async def get_my_orders(user_id: int, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Orders Service"""
     query = (
         select(Orders.id)
         .where(Orders.customer == user_id)
+        .limit(limit)
+        .offset(offset)
         .order_by(desc(Orders.id))
     )
     result = await session.execute(query)
@@ -257,6 +269,24 @@ async def create_promo_code(user_id: int, discount: int, message: Message, sessi
         return False
 
 
+async def get_count_promo_codes(*args, session: AsyncSession) -> int:
+    """Get Count Promo Codes"""
+    result = await session.execute(
+        select(func.count('*')).select_from(PromoCode)
+    )
+    return result.scalar()
+
+
+async def get_count_promo_codes_by_user_id(user_id: int, session: AsyncSession) -> int:
+    """Get Count Promo Codes By User ID"""
+    result = await session.execute(
+        select(func.count('*'))
+        .select_from(PromoCode)
+        .where(PromoCode.user_id == user_id)
+    )
+    return result.scalar()
+
+
 async def check_exists_promo_code_order(user_id: int, order_id: int, session: AsyncSession) -> bool:
     """Check Exist Active Promo Code in Order"""
     result = await session.execute(
@@ -301,7 +331,7 @@ async def get_my_promo_code(user_id: int, promo_code_id: int, session: AsyncSess
     return result.scalar()
 
 
-async def get_promo_codes_by_user_id(user_id: int, session: AsyncSession):
+async def get_promo_codes_by_user_id(user_id: int, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Promo Codes By User ID Service"""
     query = (
         select(PromoCode.id)
@@ -309,6 +339,8 @@ async def get_promo_codes_by_user_id(user_id: int, session: AsyncSession):
             PromoCode.user_id == user_id,
             PromoCode.is_active == true(),
         )
+        .limit(limit)
+        .offset(offset)
     )
     result = await session.execute(query)
     return result.scalars().all()
@@ -336,11 +368,13 @@ async def get_promo_code_by_id(promo_code_id: int, session: AsyncSession):
     return result.scalar()
 
 
-async def get_promo_codes(*args, session: AsyncSession):
+async def get_promo_codes(*args, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Promo Codes Service"""
     query = (
         select(PromoCode.id)
         .where(PromoCode.is_active == true())
+        .limit(limit)
+        .offset(offset)
     )
     result = await session.execute(query)
     return result.scalars().all()
@@ -411,17 +445,42 @@ async def create_review(user_id: int, text: str, rating: int, message: Message, 
         await message.answer(str(exc), reply_markup=buttons)
 
 
-async def get_reviews(*args, session: AsyncSession):
+async def get_count_reviews_by_user_id(user_id: int, session: AsyncSession) -> int:
+    """Get Count Reviews By User ID"""
+    result = await session.execute(
+        select(func.count('*'))
+        .select_from(Reviews)
+        .where(Reviews.is_publish == true(), Reviews.author != user_id)
+    )
+    return result.scalar()
+
+
+async def get_count_reviews(*args, session: AsyncSession) -> int:
+    """Get Count Reviews"""
+    result = await session.execute(
+        select(func.count('*')).select_from(Reviews)
+    )
+    return result.scalar()
+
+
+async def get_reviews(*args, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Reviews Service"""
-    result = await session.execute(select(Reviews.id))
+    query = (
+        select(Reviews.id)
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await session.execute(query)
     return result.scalars().all()
 
 
-async def get_reviews_by_user_id(user_id: int, session: AsyncSession):
+async def get_reviews_by_user_id(user_id: int, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Reviews By User ID Service"""
     query = (
         select(Reviews.id)
         .where(Reviews.is_publish == true(), Reviews.author != user_id)
+        .limit(limit)
+        .offset(offset)
     )
     result = await session.execute(query)
     return result.scalars().all()

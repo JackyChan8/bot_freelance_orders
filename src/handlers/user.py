@@ -1,5 +1,4 @@
 from aiogram import Router, F
-from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile
@@ -46,7 +45,7 @@ async def user_start_command(message: Message, command: CommandObject, session: 
 async def user_profile_command_reply(message: Message, session: AsyncSession) -> None:
     """Profile Reply Command"""
     buttons = await user_inline_keyboard.profile_inline_keyboard()
-    count_orders: int = await service_user.get_count_orders(message.from_user.id, session)
+    count_orders: int = await service_user.get_count_orders_by_user_id(message.from_user.id, session)
     await message.answer(
         user_text.PROFILE_TEXT.format(
             username=message.from_user.username,
@@ -62,7 +61,7 @@ async def user_profile_command_inline(callback: CallbackQuery, session: AsyncSes
     """Back To Profile Inline Command"""
     await utils_func.delete_before_message(callback)
     buttons = await user_inline_keyboard.profile_inline_keyboard()
-    count_orders: int = await service_user.get_count_orders(callback.from_user.id, session)
+    count_orders: int = await service_user.get_count_orders_by_user_id(callback.from_user.id, session)
     await callback.message.answer(
         user_text.PROFILE_TEXT.format(
             username=callback.from_user.username,
@@ -174,10 +173,11 @@ async def user_create_order_tech_task_upload_finish(message: Message, state: FSM
 @router.callback_query(~IsAdmin(), F.data == 'my_orders')
 async def user_get_my_orders(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get My Orders Command Inline"""
-    orders = await service_user.get_my_orders(callback.from_user.id, session)
-    if orders:
+    user_id: int = callback.from_user.id
+    count_orders: int = await service_user.get_count_orders_by_user_id(callback.from_user.id, session)
+    if count_orders:
         await utils_func.delete_before_message(callback)
-        await pagination(data=orders, type_='order', message=callback.message)
+        await pagination(type_='order', message=callback.message, session=session, user_id=user_id)
     else:
         await callback.message.answer(user_text.NOT_EXISTS_ORDERS)
 
@@ -242,11 +242,16 @@ async def referral_system_history_pay(callback: CallbackQuery) -> None:
 async def user_my_promo_codes_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get My Promo Codes Command Inline"""
     user_id: int = callback.from_user.id
-    # Get Promo Codes
-    promo_codes = await service_user.get_promo_codes_by_user_id(user_id, session)
-    if promo_codes:
+    # Get Count Promo Codes
+    count_promo_codes: int = await service_user.get_count_promo_codes_by_user_id(user_id, session)
+    if count_promo_codes:
         await utils_func.delete_before_message(callback)
-        await pagination(data=promo_codes, type_='promocode', message=callback.message)
+        await pagination(
+            type_='promocode',
+            message=callback.message,
+            session=session,
+            user_id=user_id,
+        )
     else:
         await callback.message.answer(user_text.NOT_EXISTS_PROMO_CODES)
 
@@ -266,11 +271,17 @@ async def user_get_my_promo_code_command_inline(callback: CallbackQuery, session
 async def user_apply_promo_code_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Output Orders for applying Promo Code"""
     promo_code_id: int = int(callback.data.split('_')[-1])
+    user_id: int = callback.from_user.id
     # Get Orders
-    orders = await service_user.get_my_orders(callback.from_user.id, session)
-    if orders:
+    count_orders = await service_user.get_count_orders_by_user_id(user_id, session)
+    if count_orders:
         await utils_func.delete_before_message(callback)
-        await pagination(data=orders, type_=f'promocode_order_{promo_code_id}', message=callback.message)
+        await pagination(
+            type_=f'promocode_order_{promo_code_id}',
+            message=callback.message,
+            session=session,
+            user_id=user_id,
+        )
     else:
         await callback.message.answer(user_text.NOT_EXISTS_ORDERS)
 
@@ -360,10 +371,15 @@ async def user_create_review_rating(callback: CallbackQuery, state: FSMContext, 
 @router.callback_query(~IsAdmin(), F.data == 'show_review')
 async def user_show_reviews(callback: CallbackQuery, session: AsyncSession) -> None:
     """Show reviews Inline Command"""
-    reviews = await service_user.get_reviews_by_user_id(callback.from_user.id, session)
-    if reviews:
+    user_id: int = callback.from_user.id
+    reviews_count: int = await service_user.get_reviews_by_user_id(callback.from_user.id, session)
+    if reviews_count:
         await utils_func.delete_before_message(callback)
-        await pagination(data=reviews, type_='review', message=callback.message, callback_back='our_reviews')
+        await pagination(type_='review',
+                         message=callback.message,
+                         callback_back='our_reviews',
+                         session=session,
+                         user_id=user_id)
     else:
         await callback.message.answer(user_text.NOT_EXISTS_REVIEWS)
 

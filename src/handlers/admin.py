@@ -60,16 +60,16 @@ async def admin_orders_command_inline(callback: CallbackQuery, session: AsyncSes
 @router.callback_query(IsAdmin(), F.data.endswith('_show_orders'))
 async def admin_show_orders_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     status: str = callback.data.split('_')[0]
-    orders = await service_admin.get_orders_by_status(status, session)
-    if orders:
+    count_orders: int = await service_admin.get_count_orders_by_status(status, session)
+    if count_orders:
         await utils_func.delete_before_message(callback)
         await pagination(
-            data=orders,
             type_='order',
             message=callback.message,
             callback_back='back_to_orders',
             callback_type='admin',
             status=status,
+            session=session,
         )
     else:
         await callback.message.answer(admin_text.NOT_EXISTS_ORDERS_WITH_STATUS)
@@ -194,15 +194,15 @@ async def admin_create_promo_code_username(message: Message, state: FSMContext, 
 async def admin_show_promo_code_inline_keyboard(callback: CallbackQuery, session: AsyncSession) -> None:
     """Show Promo Code Inline Keyboard"""
     # Get Promo Codes
-    promo_codes = await service_admin.get_promo_codes(session=session)
-    if promo_codes:
+    count_promo_codes: int = await service_admin.get_count_promo_codes(session=session)
+    if count_promo_codes:
         await utils_func.delete_before_message(callback)
         await pagination(
-            data=promo_codes,
             type_='promocode',
             message=callback.message,
             callback_back='back_to_promo_code',
             callback_type='admin',
+            session=session,
         )
     else:
         await callback.message.answer(admin_text.NOT_EXISTS_PROMO_CODES)
@@ -259,15 +259,15 @@ async def admin_reviews_command_inline(callback: CallbackQuery) -> None:
 @router.callback_query(IsAdmin(), F.data == 'show_reviews')
 async def admin_show_reviews_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Show Reviews Inline Command"""
-    reviews = await service_admin.get_reviews(session=session)
-    if reviews:
+    count_reviews = await service_admin.get_count_reviews(session=session)
+    if count_reviews:
         await utils_func.delete_before_message(callback)
         await pagination(
-            data=reviews,
             type_='review',
             message=callback.message,
             callback_back='back_to_reviews',
             callback_type='admin',
+            session=session,
         )
     else:
         await callback.message.answer(admin_text.NOT_EXISTS_REVIEWS)
