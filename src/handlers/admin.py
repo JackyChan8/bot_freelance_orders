@@ -238,7 +238,79 @@ async def admin_show_user_promo_code(callback: CallbackQuery, session: AsyncSess
 @router.message(IsAdmin(), F.text == '👤 Пользователи')
 async def admin_users_command_reply(message: Message, session: AsyncSession) -> None:
     """Users Menu Reply Command"""
-    pass
+    count_users: int = await service_admin.get_count_users(session=session)
+    buttons = await admin_inline_keyboard.users_inline_keyboards() if count_users else None
+    await message.answer(
+        admin_text.USER_MENU_TEXT.format(count_users=count_users),
+        reply_markup=buttons,
+    )
+
+
+@router.callback_query(IsAdmin(), F.data == 'back_to_users')
+async def admin_users_command_inline(callback: CallbackQuery) -> None:
+    """Users Menu Inline Command"""
+    await admin_users_command_reply(callback.message)
+
+
+@router.callback_query(IsAdmin(), F.data == 'show_users')
+async def show_users_command_inline(callback: CallbackQuery, session: AsyncSession):
+    """Get Users Command Inline"""
+    count_users: int = await service_admin.get_count_users(session=session)
+    if count_users:
+        await utils_func.delete_before_message(callback)
+        await pagination(
+            type_='users',
+            message=callback.message,
+            callback_back='back_to_users',
+            callback_type='admin',
+            session=session,
+        )
+    else:
+        await callback.message.answer(admin_text.NOT_EXISTS_USERS)
+
+
+@router.callback_query(IsAdmin(), F.data.startswith('users_admin_№'))
+async def get_user_info_command_inline(callback: CallbackQuery, session: AsyncSession):
+    """Get Information User Command Inline"""
+    user_id: int = int(callback.data.split('№')[-1])
+    # Get User
+    user: tuple = await service_admin.get_user_info(user_id, session)
+    # Output Information User
+    buttons = await admin_inline_keyboard.get_user_info_inline_keyboard(user_id, user[1])
+    await callback.message.answer(
+        admin_text.USER_INFO_TEXT.format(
+            username=user[0],
+            count_orders=user[2],
+            count_reviews=user[3],
+            count_referrals=user[4],
+            count_promo_codes=user[5],
+        ),
+        reply_markup=buttons,
+    )
+
+
+@router.callback_query(IsAdmin(), F.data.startswith('unblock_user'))
+async def unblock_user_command_inline(callback: CallbackQuery, session: AsyncSession):
+    """Unblock User Command Inline"""
+    user_id: int = int(callback.data.split('_')[-1])
+    # Un Block User
+    is_un_block = await service_admin.block_user(user_id, False, callback.message, session)
+    if is_un_block:
+        await utils_func.delete_before_message(callback)
+        # Send Notification
+        await utils_func.send_bot_message(callback.bot, user_id, admin_text.USER_UN_BLOCK)
+
+
+@router.callback_query(IsAdmin(), F.data.startswith('block_user'))
+async def block_user_command_inline(callback: CallbackQuery, session: AsyncSession):
+    """Block User Command Inline"""
+    user_id: int = int(callback.data.split('_')[-1])
+    # Block User
+    is_block = await service_admin.block_user(user_id, True, callback.message, session)
+    if is_block:
+        await utils_func.delete_before_message(callback)
+        # Send Notification
+        await utils_func.send_bot_message(callback.bot, user_id, admin_text.USER_BLOCK)
 
 
 # ================================================================= Reviews

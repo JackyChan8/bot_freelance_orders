@@ -26,6 +26,9 @@ paginationTypeText: dict = {
     'review': {
         'user': ('🗒 Отзыв', services.get_reviews_by_user_id, 'our_reviews', services.get_count_reviews_by_user_id),
         'admin': ('🗒 Отзыв', services.get_reviews, 'back_to_reviews', services.get_count_reviews),
+    },
+    'users': {
+        'admin': ('👤 Пользователи', services.get_users, 'back_to_users', services.get_count_users)
     }
 }
 
@@ -65,9 +68,15 @@ async def pagination(type_: str,
         count = await pagination_type[-1](user_id, session)
 
     for data_id in data:
+        if type_ == 'users':
+            author = await message.bot.get_chat_member(data_id, data_id)
+            button_text = f'{pagination_type[0][0]} {author.user.username}'
+        else:
+            button_text = f'{pagination_type[0]} №{data_id}'
         builder.row(
             InlineKeyboardButton(
-                text=f'{pagination_type[0]} №{data_id}', callback_data=f'{type_}_{callback_type}_№{data_id}'
+                text=button_text,
+                callback_data=f'{type_}_{callback_type}_№{data_id}',
             )
         )
 
@@ -100,7 +109,8 @@ async def pagination(type_: str,
         )
     builder.row(*buttons_row)
     builder.row(InlineKeyboardButton(text='« Назад', callback_data=callback_back))
+    message_text = f'Ваши {pagination_type[0].split(' ')[-1]}{"" if type_ == "users" else "ы"}'
     await message.answer(
-        f'Ваши {pagination_type[0].split(' ')[-1]}ы:',
+        message_text,
         reply_markup=builder.as_markup()
     )

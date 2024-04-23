@@ -15,6 +15,7 @@ OrderType = Literal['Веб-Сайт', 'Telegram Bot', 'Работа с серв
 class Users(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     username: Mapped[str] = mapped_column(String, nullable=False)
+    is_ban: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Reviews(Base):

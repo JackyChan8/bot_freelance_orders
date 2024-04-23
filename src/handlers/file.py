@@ -2,6 +2,7 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery, FSInputFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from utils.filters import IsBanUser
 from utils import static_path as photo_user
 from services import services as service_user
 
@@ -13,7 +14,7 @@ type_service = {
 router = Router(name='file')
 
 
-@router.callback_query(F.data.startswith('download_file_'))
+@router.callback_query(IsBanUser(), F.data.startswith('download_file_'))
 async def download_file(callback: CallbackQuery, session: AsyncSession) -> None:
     """Download File"""
     user_id: int = callback.from_user.id

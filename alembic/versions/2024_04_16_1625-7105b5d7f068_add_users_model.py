@@ -25,6 +25,7 @@ def upgrade() -> None:
         "users",
         sa.Column("id", sa.BigInteger(), nullable=False),
         sa.Column("username", sa.String(), nullable=False),
+        sa.Column("is_ban", sa.Boolean(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     # ### end Alembic commands ###

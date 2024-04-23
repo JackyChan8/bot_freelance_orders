@@ -92,3 +92,27 @@ async def get_review_info_inline_keyboard(review_id: int, is_publish: bool) -> I
             InlineKeyboardButton(text='⬆️ Опубликовать', callback_data=f'add_public_review_{review_id}')
         )
     return builder.as_markup()
+
+
+# ================================================================= Users
+async def users_inline_keyboards() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='👥 Показать Пользователей', callback_data='show_users')
+            ],
+        ]
+    )
+
+
+async def get_user_info_inline_keyboard(user_id: int, is_ban: bool) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    if is_ban:
+        builder.row(
+            InlineKeyboardButton(text='⬆️ Разблокировать', callback_data=f'unblock_user_{user_id}')
+        )
+    else:
+        builder.row(
+            InlineKeyboardButton(text='⬇️ Заблокировать', callback_data=f'block_user_{user_id}')
+        )
+    return builder.as_markup()

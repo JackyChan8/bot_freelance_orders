@@ -1,7 +1,7 @@
 from typing import Any
 
 from aiogram.types import Message, ReplyKeyboardRemove
-from sqlalchemy import select, insert, update, exists, func, desc, case, Row
+from sqlalchemy import select, insert, update, distinct, exists, func, desc, case, Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import true, false, null
 
@@ -29,6 +29,28 @@ async def check_exist_user_by_username(username: str, session: AsyncSession) -> 
     return result.scalar()
 
 
+async def get_count_users(*args, session: AsyncSession) -> int:
+    """Get Count Users Service"""
+    result = await session.execute(
+        select(func.count('*')).select_from(Users)
+    )
+    return result.scalar()
+
+
+async def get_users(*args, session: AsyncSession, offset: int = null(), limit: int = 3):
+    """Get Users Service"""
+    query = (
+        select(Users.id, func.count(Orders.id).label('orders_count'))
+        .join(Orders, Users.id == Orders.customer, isouter=True)
+        .group_by(Users.id)
+        .order_by(desc('orders_count'))
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await session.execute(query)
+    return result.scalars().all()
+
+
 async def get_user_id_by_username(username: str, session: AsyncSession) -> int:
     """Get User ID By Username"""
     query = (
@@ -37,6 +59,66 @@ async def get_user_id_by_username(username: str, session: AsyncSession) -> int:
     )
     result = await session.execute(query)
     return result.scalar()
+
+
+async def get_user_info(user_id: int, session: AsyncSession):
+    """Get User Information By Username"""
+    query = (
+        select(
+            Users.username,
+            Users.is_ban,
+            func.count(distinct(Orders.id)).label('orders_count'),
+            func.count(distinct(Reviews.id)).label('reviews_count'),
+            func.count(distinct(ReferralSystem.id)).label('referral_count'),
+            func.count(distinct(PromoCode.id)).label('promo_codes_count'),
+        )
+        .where(Users.id == user_id)
+        .join(Orders, Users.id == Orders.customer, isouter=True)
+        .join(Reviews, Users.id == Reviews.author, isouter=True)
+        .join(ReferralSystem, Users.id == ReferralSystem.referral_id, isouter=True)
+        .join(PromoCode, Users.id == PromoCode.user_id, isouter=True)
+        .group_by(Users.username, Users.is_ban)
+    )
+    result = await session.execute(query)
+    return result.first()
+
+
+async def check_is_blocked_users(user_id: int, session: AsyncSession) -> int:
+    """Check Is Blocked Users Service"""
+    query = (
+        select(
+            case(
+                (exists(select(Users.id).where(Users.id == user_id, Users.is_ban == true())), 1), else_=0
+            )
+        )
+        .where(Users.id == user_id)
+    )
+    print('query: ', query)
+    result = await session.execute(query)
+    return result.scalar()
+
+
+async def block_user(user_id: int, is_ban: bool, message: Message, session: AsyncSession) -> bool:
+    """Block / Unblock User Service"""
+    text: str = await admin_text.ban_user_text(is_ban)
+    is_ban = true() if is_ban else false()
+
+    query = (
+        update(Users)
+        .where(Users.id == user_id)
+        .values(is_ban=is_ban)
+        .execution_options(synchronize_session='fetch')
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(text)
+        return True
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при изменении пользователя')
+        await message.answer(str(exc))
+        return False
 
 
 async def create_user(user_id: int, username: str, message: Message, session: AsyncSession):

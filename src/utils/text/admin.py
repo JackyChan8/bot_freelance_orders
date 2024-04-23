@@ -48,3 +48,23 @@ async def update_review(is_publish: bool) -> str:
     return f'🎉 Отзыв успешно {text} 🎉'
 
 NOT_FOUND_COMMAND = 'Неизвестная Команда'
+
+# ================================================================= Users
+USER_MENU_TEXT = 'Кол-во Пользователей: {count_users}'
+NOT_EXISTS_USERS = 'Пользователи отсутствуют'
+
+USER_INFO_TEXT = """
+👤 <b>Имя Пользователя:</b> {username}
+#️⃣ <b>Заказов</b> {count_orders}
+📄 <b>Отзывов</b> {count_reviews}
+🌐 <b>Рефералов</b> {count_referrals}
+🏷 <b>Промокодов</b> {count_promo_codes}
+"""
+
+
+async def ban_user_text(is_ban: bool) -> str:
+    text = 'Заблокирован' if is_ban else 'Разблокирован'
+    return f'Пользователь {text}'
+
+USER_BLOCK = '❗️ Вы были забанены ❗️'
+USER_UN_BLOCK = '🎉 Вас разбанили 🎉'
