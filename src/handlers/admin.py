@@ -379,18 +379,30 @@ async def admin_settings_command_reply(message: Message) -> None:
     )
 
 
+@router.callback_query(IsAdmin(), F.data == 'back_to_settings')
+async def admin_settings_command_inline(callback: CallbackQuery) -> None:
+    """Settings Menu Inline Command"""
+    buttons = await admin_inline_keyboard.settings_inline_keyboards()
+    await callback.message.answer(
+        admin_text.SETTINGS_MENU_TEXT,
+        reply_markup=buttons,
+    )
+
+
 # ================================================================= Our Jobs
 
 @router.callback_query(IsAdmin(), F.data == 'our_jobs')
-async def admin_tech_support_command_inline(callback: CallbackQuery) -> None:
-    """Our Jobs Menu Inline Command"""
-    buttons = await admin_inline_keyboard.add_our_works()
+async def admin_tech_support_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Our Project Menu Inline Command"""
+    # Check Exists Project
+    exists_jobs = await service_admin.check_exists_projects(session)
+    buttons = await admin_inline_keyboard.add_our_works(exists_jobs)
     await callback.message.answer(admin_text.SETTINGS_MENU_TEXT, reply_markup=buttons)
 
 
 @router.callback_query(IsAdmin(), F.data == 'add_job')
-async def admin_add_job_command_inline(callback: CallbackQuery, state: FSMContext) -> None:
-    """Create Job Command Inline"""
+async def admin_add_project_command_inline(callback: CallbackQuery, state: FSMContext) -> None:
+    """Create Project Command Inline"""
     cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
 
     await state.set_state(admin_states.JobStates.title)
@@ -401,24 +413,24 @@ async def admin_add_job_command_inline(callback: CallbackQuery, state: FSMContex
 
 
 @router.message(IsAdmin(), admin_states.JobStates.title, F.text.casefold() != 'отмена')
-async def admin_add_job_title(message: Message, state: FSMContext) -> None:
-    """Create Job title Command Inline"""
+async def admin_add_project_title(message: Message, state: FSMContext) -> None:
+    """Create Project title Command Inline"""
     await state.update_data(title=message.text)
     await state.set_state(admin_states.JobStates.description)
     await message.answer(**admin_text.JOBS_TITLE_DESCRIPTION.as_kwargs())
 
 
 @router.message(IsAdmin(), admin_states.JobStates.description, F.text.casefold() != 'отмена')
-async def admin_add_job_description(message: Message, state: FSMContext) -> None:
-    """Create Job description Command Inline"""
+async def admin_add_project_description(message: Message, state: FSMContext) -> None:
+    """Create Project description Command Inline"""
     await state.update_data(description=message.text)
     await state.set_state(admin_states.JobStates.technology)
     await message.answer(**admin_text.JOBS_TITLE_TECHNOLOGY.as_kwargs())
 
 
 @router.message(IsAdmin(), admin_states.JobStates.technology, F.text.casefold() != 'отмена')
-async def admin_add_job_technology(message: Message, state: FSMContext) -> None:
-    """Create Job technology Command Inline"""
+async def admin_add_project_technology(message: Message, state: FSMContext) -> None:
+    """Create Project technology Command Inline"""
     await state.update_data(technology=message.text)
     await state.set_state(admin_states.JobStates.images)
     await message.answer(**admin_text.JOBS_TITLE_IMAGES.as_kwargs())
@@ -427,11 +439,11 @@ async def admin_add_job_technology(message: Message, state: FSMContext) -> None:
 @router.message(IsAdmin(),
                 F.content_type.in_([ContentType.PHOTO, ContentType.DOCUMENT]),
                 admin_states.JobStates.images)
-async def admin_add_job_images(message: Message,
-                               state: FSMContext,
-                               session: AsyncSession,
-                               album: list[Message] = None) -> None:
-    """Create Job Save Command Inline"""
+async def admin_add_project_images(message: Message,
+                                   state: FSMContext,
+                                   session: AsyncSession,
+                                   album: list[Message] = None) -> None:
+    """Create Project Save Command Inline"""
     data = await state.get_data()
     await state.clear()
     # Create Project
@@ -462,5 +474,50 @@ async def admin_add_job_images(message: Message,
 
         # Added To Database
         await service_admin.create_image_project(project_id, files_name, message, session)
+
+
+@router.callback_query(IsAdmin(), F.data == 'change_project')
+async def admin_change_project_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Change Project Command Inline"""
+    count_jobs = await service_admin.get_count_projects(session=session)
+    if count_jobs:
+        await utils_func.delete_before_message(callback)
+        await pagination(
+            type_='projects',
+            message=callback.message,
+            callback_back='back_to_settings',
+            callback_type='admin',
+            session=session,
+        )
+    else:
+        await callback.message.answer(admin_text.NOT_EXISTS_JOBS)
+
+
+@router.callback_query(IsAdmin(), F.data.startswith('projects_admin_№'))
+async def admin_get_project_info_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Get Project Information Command Inline"""
+    project_id: int = int(callback.data.split('№')[-1])
+    # Get Project
+    project = await service_admin.get_project_by_id(project_id, session)
+    # Output Information Project
+    buttons = await admin_inline_keyboard.get_project_info_inline_keyboard(project_id, project.deleted)
+    await callback.message.answer(
+        admin_text.JOBS_INFO_TEXT.format(
+            title=project.title,
+            description=project.description,
+            technology=project.technology,
+            project_created=project.created_at,
+        ),
+        reply_markup=buttons,
+    )
+
+
+@router.callback_query(IsAdmin(), F.data.startswith('publish_project_') | F.data.startswith('unpublish_project_'))
+async def admin_edit_show_project_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Edited Project Visibility Command Inline"""
+    data: list[str] = callback.data.split('_')
+    project_id: int = int(data[-1])
+    deleted: bool = False if data[0] == 'publish' else True
+    await service_admin.change_show_project(project_id, deleted, callback.message, session)
 
 

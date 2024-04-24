@@ -129,11 +129,35 @@ async def settings_inline_keyboards() -> InlineKeyboardMarkup:
     )
 
 
-async def add_our_works() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text='➕ Добавить Работу', callback_data='add_job'),
-            ],
-        ]
+async def add_our_works(is_jobs: bool) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    if is_jobs:
+        builder.row(
+            InlineKeyboardButton(text='✏️ Изменить Работу', callback_data='change_project')
+        )
+    builder.row(
+        InlineKeyboardButton(text='➕ Добавить Работу', callback_data='add_job')
     )
+    return builder.as_markup()
+
+
+async def get_project_info_inline_keyboard(project_id: int, deleted: bool) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text='📷 Фотографии', callback_data=f'download_photos_project_{project_id}'))
+    if deleted:
+        builder.row(
+            InlineKeyboardButton(text='⬆️ Опубликовать', callback_data=f'publish_project_{project_id}')
+        )
+    else:
+        builder.row(
+            InlineKeyboardButton(text='⬇️ Снять с Публикации', callback_data=f'unpublish_project_{project_id}')
+        )
+    builder.row(
+        InlineKeyboardButton(text='✏️ Заголовок', callback_data=f'edit_project_title_{project_id}'),
+        InlineKeyboardButton(text='✏️ Описание', callback_data=f'edit_project_description_{project_id}'),
+    )
+    builder.row(
+        InlineKeyboardButton(text='✏️ Технологии', callback_data=f'edit_project_technology_{project_id}'),
+        InlineKeyboardButton(text='✏️ Фото', callback_data=f'edit_project_images_{project_id}'),
+    )
+    return builder.as_markup()

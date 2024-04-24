@@ -608,9 +608,65 @@ async def update_review_by_id(review_id: int, is_publish: bool, message: Message
 
 
 # ================================================================= Jobs
+async def check_exists_projects(session: AsyncSession) -> bool:
+    """Check Exists Projects Service"""
+    result = await session.execute(
+        select(exists(Projects.id))
+    )
+    return result.scalar()
+
+
+async def change_show_project(project_id: int, deleted: bool, message: Message, session: AsyncSession):
+    """Edited Showing Project Service"""
+    deleted = true() if deleted else false()
+    query = (
+        update(Projects)
+        .where(Projects.id == project_id)
+        .values(deleted=deleted)
+        .execution_options(synchronize_session='fetch')
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(admin_text.JOBS_SUCCESS_CHANGE)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при изменении видимости проекта')
+        await message.answer(str(exc))
+
+
+async def get_count_projects(*args, session: AsyncSession) -> int:
+    """Get Count Projects Service"""
+    result = await session.execute(
+        select(func.count('*')).select_from(Projects)
+    )
+    return result.scalar()
+
+
+async def get_projects(*args, session: AsyncSession, offset: int = null(), limit: int = 3):
+    """Get Projects Service"""
+    query = (
+        select(Projects.id)
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await session.execute(query)
+    return result.scalars().all()
+
+
+async def get_project_by_id(project_id: int, session: AsyncSession):
+    """Get Project By Project ID"""
+    query = (
+        select(Projects)
+        .where(Projects.id == project_id)
+    )
+    result = await session.execute(query)
+    return result.scalar()
+
+
 async def create_project(
         title: str, description: str, technology: str, message: Message, session: AsyncSession) -> int | None:
-    """Create Project Job Service"""
+    """Create Project Service"""
     buttons = await admin_reply_keyboard.start_reply_keyboard()
     query = (
         insert(Projects)
@@ -646,3 +702,13 @@ async def create_image_project(project_id: int, files_name: list[str], message: 
         await session.rollback()
         await message.answer('Произошла ошибка при Добавление Фотографий')
         await message.answer(str(exc), reply_markup=buttons)
+
+
+async def get_images_project_by_id(project_id: int, session: AsyncSession):
+    """Get Images Project By Project ID"""
+    query = (
+        select(Images.filename)
+        .where(Images.project_id == project_id)
+    )
+    result = await session.execute(query)
+    return result.scalars().all()

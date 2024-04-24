@@ -29,6 +29,9 @@ paginationTypeText: dict = {
     },
     'users': {
         'admin': ('👤 Пользователи', services.get_users, 'back_to_users', services.get_count_users)
+    },
+    'projects': {
+        'admin': ('🗄 Работы', services.get_projects, 'back_to_settings', services.get_count_projects)
     }
 }
 
@@ -109,7 +112,8 @@ async def pagination(type_: str,
         )
     builder.row(*buttons_row)
     builder.row(InlineKeyboardButton(text='« Назад', callback_data=callback_back))
-    message_text = f'Ваши {pagination_type[0].split(' ')[-1]}{"" if type_ == "users" else "ы"}'
+    # TODO Write a function to get endings for text
+    message_text = f'Ваши {pagination_type[0].split(' ')[-1]}{"" if type_ == "users" else "ы"}' if type_ != 'projects' else f'Ваши {pagination_type[0].split(' ')[-1]}'
     await message.answer(
         message_text,
         reply_markup=builder.as_markup()
