@@ -1,3 +1,4 @@
+import os
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.types import Message, CallbackQuery
 from aiogram import Bot
@@ -6,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from services import services as service_user
 from utils.text import user as user_text
+from utils import static_path
 from utils.keyboards.inline import user as user_inline_keyboard
 from utils.keyboards.inline import admin as admin_inline_keyboard
 
@@ -120,3 +122,23 @@ async def output_info_review(
 async def send_bot_message(bot: Bot, chat_id: int, text: str) -> None:
     """Send Message Bot"""
     await bot.send_message(chat_id, text)
+
+
+async def save_document(file_id: int, message: Message) -> str:
+    """Save Document"""
+    file = await message.bot.get_file(file_id)
+    _, file_extension = os.path.splitext(file.file_path)
+    file_name: str = message.date.now().strftime('%m_%d_%Y_%H_%M_%S') + f'_{file_id}' + file_extension
+    destination = static_path.JOBS_FILES + file_name
+    await message.bot.download(file=file_id, destination=destination)
+    return file_name
+
+
+async def get_files(message: Message) -> str:
+    """Get Files From Message"""
+    if message.photo:
+        file_id: str = message.photo[-1].file_id
+    else:
+        obj_dict = message.dict()
+        file_id: str = obj_dict[message.content_type]['file_id']
+    return file_id

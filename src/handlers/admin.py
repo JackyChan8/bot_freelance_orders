@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ContentType
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +15,7 @@ from utils.keyboards.inline import admin as admin_inline_keyboard
 from utils.keyboards.reply import admin as admin_reply_keyboard
 from utils.pagination import pagination
 from utils.states import admin as admin_states
+
 
 router = Router(name='admin')
 
@@ -365,3 +366,101 @@ async def admin_publish_review_command_inline(callback: CallbackQuery, session: 
     """Publication Review Command Inline"""
     review_id: int = int(callback.data.split('_')[-1])
     await service_admin.update_review_by_id(review_id, True, callback.message, session)
+
+
+# ================================================================= Settings
+@router.message(IsAdmin(), F.text == '🛠 Настройка')
+async def admin_settings_command_reply(message: Message) -> None:
+    """Settings Menu Reply Command"""
+    buttons = await admin_inline_keyboard.settings_inline_keyboards()
+    await message.answer(
+        admin_text.SETTINGS_MENU_TEXT,
+        reply_markup=buttons,
+    )
+
+
+# ================================================================= Our Jobs
+
+@router.callback_query(IsAdmin(), F.data == 'our_jobs')
+async def admin_tech_support_command_inline(callback: CallbackQuery) -> None:
+    """Our Jobs Menu Inline Command"""
+    buttons = await admin_inline_keyboard.add_our_works()
+    await callback.message.answer(admin_text.SETTINGS_MENU_TEXT, reply_markup=buttons)
+
+
+@router.callback_query(IsAdmin(), F.data == 'add_job')
+async def admin_add_job_command_inline(callback: CallbackQuery, state: FSMContext) -> None:
+    """Create Job Command Inline"""
+    cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
+
+    await state.set_state(admin_states.JobStates.title)
+    await callback.message.answer(
+        **admin_text.JOBS_TITLE_TEXT.as_kwargs(),
+        reply_markup=cancel_button,
+    )
+
+
+@router.message(IsAdmin(), admin_states.JobStates.title, F.text.casefold() != 'отмена')
+async def admin_add_job_title(message: Message, state: FSMContext) -> None:
+    """Create Job title Command Inline"""
+    await state.update_data(title=message.text)
+    await state.set_state(admin_states.JobStates.description)
+    await message.answer(**admin_text.JOBS_TITLE_DESCRIPTION.as_kwargs())
+
+
+@router.message(IsAdmin(), admin_states.JobStates.description, F.text.casefold() != 'отмена')
+async def admin_add_job_description(message: Message, state: FSMContext) -> None:
+    """Create Job description Command Inline"""
+    await state.update_data(description=message.text)
+    await state.set_state(admin_states.JobStates.technology)
+    await message.answer(**admin_text.JOBS_TITLE_TECHNOLOGY.as_kwargs())
+
+
+@router.message(IsAdmin(), admin_states.JobStates.technology, F.text.casefold() != 'отмена')
+async def admin_add_job_technology(message: Message, state: FSMContext) -> None:
+    """Create Job technology Command Inline"""
+    await state.update_data(technology=message.text)
+    await state.set_state(admin_states.JobStates.images)
+    await message.answer(**admin_text.JOBS_TITLE_IMAGES.as_kwargs())
+
+
+@router.message(IsAdmin(),
+                F.content_type.in_([ContentType.PHOTO, ContentType.DOCUMENT]),
+                admin_states.JobStates.images)
+async def admin_add_job_images(message: Message,
+                               state: FSMContext,
+                               session: AsyncSession,
+                               album: list[Message] = None) -> None:
+    """Create Job Save Command Inline"""
+    data = await state.get_data()
+    await state.clear()
+    # Create Project
+    project_id: int = await service_admin.create_project(
+        data['title'],
+        data['description'],
+        data['technology'],
+        message,
+        session,
+    )
+    if project_id:
+        files_name: list[str] = []
+        # Check Group or Simple File
+        if album:
+            files_id: list[str] = []
+            # Get Files ID
+            for msg in album:
+                file_id: str = await utils_func.get_files(msg)
+                files_id.append(file_id)
+            # Save Files
+            for file_id in files_id:
+                path_file: str = await utils_func.save_document(file_id, message)
+                files_name.append(path_file)
+        else:
+            file_id: str = await utils_func.get_files(message)
+            path_file: str = await utils_func.save_document(file_id, message)
+            files_name.append(path_file)
+
+        # Added To Database
+        await service_admin.create_image_project(project_id, files_name, message, session)
+
+

@@ -72,3 +72,22 @@ class PromoCode(Base):
         CheckConstraint(discount > 0, name='check_positive_discount'),
         CheckConstraint(discount < 100, name='check_not_more_100_discount'),
     )
+
+
+class Projects(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    technology: Mapped[str] = mapped_column(Text, nullable=False)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(Date, default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(Date, default=func.now(), onupdate=func.now())
+
+
+class Images(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey('projects.id'), nullable=False)
+    filename: Mapped[str] = mapped_column(Text, nullable=False)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(Date, default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(Date, default=func.now(), onupdate=func.now())

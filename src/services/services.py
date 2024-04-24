@@ -5,10 +5,11 @@ from sqlalchemy import select, insert, update, distinct, exists, func, desc, cas
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import true, false, null
 
-from models import Users, Orders, ReferralSystem, PromoCode, Reviews
+from models import Users, Orders, ReferralSystem, PromoCode, Reviews, Projects, Images
 from utils.text import user as user_text
 from utils.text import admin as admin_text
 from utils.keyboards.reply import user as user_reply_keyboard
+from utils.keyboards.reply import admin as admin_reply_keyboard
 from utils.utils_func import statuses
 
 
@@ -604,3 +605,44 @@ async def update_review_by_id(review_id: int, is_publish: bool, message: Message
         await session.rollback()
         await message.answer('Произошла ошибка при изменении отзыва')
         await message.answer(str(exc))
+
+
+# ================================================================= Jobs
+async def create_project(
+        title: str, description: str, technology: str, message: Message, session: AsyncSession) -> int | None:
+    """Create Project Job Service"""
+    buttons = await admin_reply_keyboard.start_reply_keyboard()
+    query = (
+        insert(Projects)
+        .values(
+            title=title,
+            description=description,
+            technology=technology,
+        ).returning(Projects.id)
+    )
+    try:
+        result = await session.execute(query)
+        return result.scalar()
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при добавлении проекта')
+        await message.answer(str(exc), reply_markup=buttons)
+
+
+async def create_image_project(project_id: int, files_name: list[str], message: Message, session: AsyncSession):
+    """Create Image Project Service"""
+    buttons = await admin_reply_keyboard.start_reply_keyboard()
+
+    data = [{'project_id': project_id, 'filename': filename} for filename in files_name]
+    query = (
+        insert(Images)
+        .values(data)
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(**admin_text.JOB_SUCCESS_ADD.as_kwargs(), reply_markup=buttons)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при Добавление Фотографий')
+        await message.answer(str(exc), reply_markup=buttons)

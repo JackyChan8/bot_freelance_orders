@@ -116,3 +116,24 @@ async def get_user_info_inline_keyboard(user_id: int, is_ban: bool) -> InlineKey
             InlineKeyboardButton(text='⬇️ Заблокировать', callback_data=f'block_user_{user_id}')
         )
     return builder.as_markup()
+
+
+# ================================================================= Settings
+async def settings_inline_keyboards() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='🗄 Наши Работы', callback_data='our_jobs'),
+            ],
+        ]
+    )
+
+
+async def add_our_works() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='➕ Добавить Работу', callback_data='add_job'),
+            ],
+        ]
+    )

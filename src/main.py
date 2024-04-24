@@ -21,6 +21,7 @@ async def main():
     dp = Dispatcher()
 
     dp.update.middleware(middlewares.DbSessionMiddleware(session_pool=async_session_maker))
+    dp.message.middleware(middlewares.GroupPhotosMiddleware())
 
     await set_commands(bot)
 
