@@ -635,6 +635,24 @@ async def change_show_project(project_id: int, deleted: bool, message: Message, 
         await message.answer(str(exc))
 
 
+async def change_project_info(project_id: int, values: dict, message: Message, session: AsyncSession):
+    """Change Field Information Project"""
+    query = (
+        update(Projects)
+        .where(Projects.id == project_id)
+        .values(values)
+        .execution_options(synchronize_session='fetch')
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(admin_text.JOBS_SUCCESS_CHANGE)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при изменении информации проекта')
+        await message.answer(str(exc))
+
+
 async def get_count_projects(*args, session: AsyncSession) -> int:
     """Get Count Projects Service"""
     result = await session.execute(
@@ -704,11 +722,34 @@ async def create_image_project(project_id: int, files_name: list[str], message: 
         await message.answer(str(exc), reply_markup=buttons)
 
 
+async def un_show_images_project(project_id: int, message: Message, session: AsyncSession) -> bool:
+    """Un Show Images Project"""
+    buttons = await admin_reply_keyboard.start_reply_keyboard()
+    query = (
+        update(Images)
+        .where(Images.project_id == project_id)
+        .values(deleted=true())
+        .execution_options(synchronize_session='fetch')
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        return True
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при Изменении Видимости Фотографий')
+        await message.answer(str(exc), reply_markup=buttons)
+        return False
+
+
 async def get_images_project_by_id(project_id: int, session: AsyncSession):
     """Get Images Project By Project ID"""
     query = (
         select(Images.filename)
-        .where(Images.project_id == project_id)
+        .where(
+            Images.project_id == project_id,
+            Images.deleted == false(),
+        )
     )
     result = await session.execute(query)
     return result.scalars().all()

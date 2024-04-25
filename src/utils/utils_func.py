@@ -119,6 +119,27 @@ async def output_info_review(
     await message.answer(text, reply_markup=buttons, parse_mode=ParseMode.HTML)
 
 
+async def get_files_name_download_file(message: Message, album: list[Message] = None) -> list[str]:
+    """Get Files Names About Files"""
+    files_names: list[str] = []
+    # Check Group or Simple File
+    if album:
+        files_id: list[str] = []
+        # Get Files ID
+        for msg in album:
+            file_id: str = await get_files(msg)
+            files_id.append(file_id)
+        # Save Files
+        for file_id in files_id:
+            path_file: str = await save_document(file_id, message)
+            files_names.append(path_file)
+    else:
+        file_id: str = await get_files(message)
+        path_file: str = await save_document(file_id, message)
+        files_names.append(path_file)
+    return files_names
+
+
 async def send_bot_message(bot: Bot, chat_id: int, text: str) -> None:
     """Send Message Bot"""
     await bot.send_message(chat_id, text)

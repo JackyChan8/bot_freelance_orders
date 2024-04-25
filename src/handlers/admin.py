@@ -444,7 +444,7 @@ async def admin_add_project_images(message: Message,
                                    session: AsyncSession,
                                    album: list[Message] = None) -> None:
     """Create Project Save Command Inline"""
-    data = await state.get_data()
+    data: dict = await state.get_data()
     await state.clear()
     # Create Project
     project_id: int = await service_admin.create_project(
@@ -455,23 +455,8 @@ async def admin_add_project_images(message: Message,
         session,
     )
     if project_id:
-        files_name: list[str] = []
-        # Check Group or Simple File
-        if album:
-            files_id: list[str] = []
-            # Get Files ID
-            for msg in album:
-                file_id: str = await utils_func.get_files(msg)
-                files_id.append(file_id)
-            # Save Files
-            for file_id in files_id:
-                path_file: str = await utils_func.save_document(file_id, message)
-                files_name.append(path_file)
-        else:
-            file_id: str = await utils_func.get_files(message)
-            path_file: str = await utils_func.save_document(file_id, message)
-            files_name.append(path_file)
-
+        # Get Files Names
+        files_name: list[str] = await utils_func.get_files_name_download_file(message, album)
         # Added To Database
         await service_admin.create_image_project(project_id, files_name, message, session)
 
@@ -479,7 +464,7 @@ async def admin_add_project_images(message: Message,
 @router.callback_query(IsAdmin(), F.data == 'change_project')
 async def admin_change_project_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Change Project Command Inline"""
-    count_jobs = await service_admin.get_count_projects(session=session)
+    count_jobs: int = await service_admin.get_count_projects(session=session)
     if count_jobs:
         await utils_func.delete_before_message(callback)
         await pagination(
@@ -520,4 +505,65 @@ async def admin_edit_show_project_command_inline(callback: CallbackQuery, sessio
     deleted: bool = False if data[0] == 'publish' else True
     await service_admin.change_show_project(project_id, deleted, callback.message, session)
 
+
+@router.callback_query(IsAdmin(), F.data.startswith('edit_project_'))
+async def admin_edit_project_info_command_inline(callback: CallbackQuery, state: FSMContext) -> None:
+    """Edited Project Information Command Inline"""
+    data: list[str] = callback.data.split('_')
+    project_id: int = int(data[-1])
+    field_edited: str = data[2]
+    cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
+
+    await state.update_data(field=field_edited, project_id=project_id)
+
+    if field_edited != 'images':
+        await state.set_state(admin_states.ProjectEditStates.text)
+        await state.update_data(images=None)
+        await callback.message.answer(
+            await admin_text.edited_project_text(field_edited),
+            reply_markup=cancel_button,
+        )
+    else:
+        await state.set_state(admin_states.ProjectEditStates.images)
+        await state.update_data(text=None)
+        await callback.message.answer(
+            admin_text.EDITED_PROJECT_TEXT,
+            reply_markup=cancel_button,
+        )
+
+
+@router.message(IsAdmin(), admin_states.ProjectEditStates.text, F.text.casefold() != 'отмена')
+async def admin_save_info_project(message: Message, state: FSMContext, session: AsyncSession) -> None:
+    """Save Edited Project Information Command"""
+    await state.update_data(text=message.text)
+    data: dict = await state.get_data()
+    await state.clear()
+    values: dict = {data['field']: data['text']}
+    # Change Project Information
+    await service_admin.change_project_info(
+        project_id=data.get('project_id'),
+        values=values,
+        message=message,
+        session=session,
+    )
+    await admin_start_command(message)
+
+
+@router.message(IsAdmin(),
+                F.content_type.in_([ContentType.PHOTO, ContentType.DOCUMENT]),
+                admin_states.ProjectEditStates.images)
+async def admin_edit_project_images(message: Message,
+                                    state: FSMContext,
+                                    session: AsyncSession,
+                                    album: list[Message] = None) -> None:
+    data: dict = await state.get_data()
+    project_id: int = data['project_id']
+    await state.clear()
+    # UnShow Images Projects
+    un_show_images = await service_admin.un_show_images_project(project_id, message, session)
+    if un_show_images:
+        # Get Files Names
+        files_name: list[str] = await utils_func.get_files_name_download_file(message, album)
+        # Added To Database
+        await service_admin.create_image_project(project_id, files_name, message, session)
 

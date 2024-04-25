@@ -11,3 +11,10 @@ class JobStates(StatesGroup):
     description = State()
     technology = State()
     images = State()
+
+
+class ProjectEditStates(StatesGroup):
+    field = State()
+    project_id = State()
+    text = State()
+    images = State()
