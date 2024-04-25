@@ -248,9 +248,9 @@ async def admin_users_command_reply(message: Message, session: AsyncSession) -> 
 
 
 @router.callback_query(IsAdmin(), F.data == 'back_to_users')
-async def admin_users_command_inline(callback: CallbackQuery) -> None:
+async def admin_users_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Users Menu Inline Command"""
-    await admin_users_command_reply(callback.message)
+    await admin_users_command_reply(callback.message, session)
 
 
 @router.callback_query(IsAdmin(), F.data == 'show_users')
