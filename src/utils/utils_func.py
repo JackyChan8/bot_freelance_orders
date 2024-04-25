@@ -1,4 +1,5 @@
 import os
+import re
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.types import Message, CallbackQuery
 from aiogram import Bot
@@ -20,6 +21,8 @@ statuses = {
     'test': 'Тестирование',
     'finish': 'Завершенный',
 }
+
+EMAIL_REGEX = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
 
 
 async def delete_before_message(callback: CallbackQuery) -> None:
@@ -185,3 +188,11 @@ async def get_files(message: Message) -> str:
         obj_dict = message.dict()
         file_id: str = obj_dict[message.content_type]['file_id']
     return file_id
+
+
+def check_is_email(text: str) -> bool:
+    """Check Regex is Email Address"""
+    if re.fullmatch(EMAIL_REGEX, text):
+        return True
+    else:
+        return False

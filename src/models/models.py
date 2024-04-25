@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, Literal, get_args
 
 from sqlalchemy.sql import func
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, validates
 from sqlalchemy import Integer, BigInteger, String, Text, Boolean, ForeignKey, CheckConstraint, Date, Enum
 
 from .base_class import Base
@@ -91,3 +91,15 @@ class Images(Base):
     deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(Date, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(Date, default=func.now(), onupdate=func.now())
+
+
+class TechSupport(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, nullable=False)
+
+    @validates("email")
+    def validate_email(self, key, address):
+        if "@" not in address:
+            raise ValueError("failed simple email validation")
+        return address

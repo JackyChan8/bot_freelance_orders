@@ -18,3 +18,8 @@ class ProjectEditStates(StatesGroup):
     project_id = State()
     text = State()
     images = State()
+
+
+class TechSupport(StatesGroup):
+    username = State()
+    email = State()

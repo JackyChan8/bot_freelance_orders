@@ -5,9 +5,10 @@ from sqlalchemy import select, insert, update, distinct, exists, func, desc, cas
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import true, false, null
 
-from models import Users, Orders, ReferralSystem, PromoCode, Reviews, Projects, Images
+from models import Users, Orders, ReferralSystem, PromoCode, Reviews, Projects, Images, TechSupport
 from utils.text import user as user_text
 from utils.text import admin as admin_text
+from utils.keyboards.inline import admin as admin_inline_keyboard
 from utils.keyboards.reply import user as user_reply_keyboard
 from utils.keyboards.reply import admin as admin_reply_keyboard
 from utils.utils_func import statuses
@@ -774,3 +775,54 @@ async def get_images_project_by_id(project_id: int, session: AsyncSession):
     )
     result = await session.execute(query)
     return result.scalars().all()
+
+
+# ================================================================= Tech Support
+async def check_exist_tech_support(session: AsyncSession) -> bool:
+    """Check Exist Tech Support Service"""
+    result = await session.execute(select(exists(TechSupport.id)))
+    return result.scalar()
+
+
+async def get_tech_support(session: AsyncSession):
+    """Get Info About Tech Support"""
+    result = await session.execute(
+        select(TechSupport.username, TechSupport.email)
+    )
+    return result.first()
+
+
+async def update_tech_support(username: str, email: str, message: Message, session: AsyncSession) -> None:
+    """Update Tech Support Service"""
+    buttons = await admin_inline_keyboard.settings_studio_inline_keyboards()
+    query = (
+        update(TechSupport)
+        .where(TechSupport.id == 1)
+        .values(username=username, email=email)
+        .execution_options(synchronize_session='fetch')
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(admin_text.UPDATE_TECH_SUPPORT_SUCCESS, reply_markup=buttons)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при Изменении Технической Поддержки')
+        await message.answer(str(exc), reply_markup=buttons)
+
+
+async def create_tech_support(username: str, email: str, message: Message, session: AsyncSession) -> None:
+    """Create Tech Support Service"""
+    buttons = await admin_inline_keyboard.settings_studio_inline_keyboards()
+    query = (
+        insert(TechSupport)
+        .values(username=username, email=email)
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(admin_text.ADD_TECH_SUPPORT_SUCCESS, reply_markup=buttons)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при Добавлении Информации по Технической Поддержки')
+        await message.answer(str(exc), reply_markup=buttons)

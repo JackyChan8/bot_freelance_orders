@@ -414,7 +414,7 @@ async def admin_add_project_command_inline(callback: CallbackQuery, state: FSMCo
 
 @router.message(IsAdmin(), admin_states.JobStates.title, F.text.casefold() != 'отмена')
 async def admin_add_project_title(message: Message, state: FSMContext) -> None:
-    """Create Project title Command Inline"""
+    """Create Project title Command Reply"""
     await state.update_data(title=message.text)
     await state.set_state(admin_states.JobStates.description)
     await message.answer(**admin_text.JOBS_TITLE_DESCRIPTION.as_kwargs())
@@ -422,7 +422,7 @@ async def admin_add_project_title(message: Message, state: FSMContext) -> None:
 
 @router.message(IsAdmin(), admin_states.JobStates.description, F.text.casefold() != 'отмена')
 async def admin_add_project_description(message: Message, state: FSMContext) -> None:
-    """Create Project description Command Inline"""
+    """Create Project description Command Reply"""
     await state.update_data(description=message.text)
     await state.set_state(admin_states.JobStates.technology)
     await message.answer(**admin_text.JOBS_TITLE_TECHNOLOGY.as_kwargs())
@@ -430,7 +430,7 @@ async def admin_add_project_description(message: Message, state: FSMContext) -> 
 
 @router.message(IsAdmin(), admin_states.JobStates.technology, F.text.casefold() != 'отмена')
 async def admin_add_project_technology(message: Message, state: FSMContext) -> None:
-    """Create Project technology Command Inline"""
+    """Create Project technology Command Reply"""
     await state.update_data(technology=message.text)
     await state.set_state(admin_states.JobStates.images)
     await message.answer(**admin_text.JOBS_TITLE_IMAGES.as_kwargs())
@@ -443,7 +443,7 @@ async def admin_add_project_images(message: Message,
                                    state: FSMContext,
                                    session: AsyncSession,
                                    album: list[Message] = None) -> None:
-    """Create Project Save Command Inline"""
+    """Create Project Save Command Reply"""
     data: dict = await state.get_data()
     await state.clear()
     # Create Project
@@ -521,7 +521,7 @@ async def admin_edit_project_info_command_inline(callback: CallbackQuery, state:
 
 @router.message(IsAdmin(), admin_states.ProjectEditStates.text, F.text.casefold() != 'отмена')
 async def admin_save_info_project(message: Message, state: FSMContext, session: AsyncSession) -> None:
-    """Save Edited Project Information Command"""
+    """Save Edited Project Information Command Reply"""
     await state.update_data(text=message.text)
     data: dict = await state.get_data()
     await state.clear()
@@ -554,3 +554,86 @@ async def admin_edit_project_images(message: Message,
         # Added To Database
         await service_admin.create_image_project(project_id, files_name, message, session)
 
+
+# ================================================================= Settings Studio
+@router.callback_query(IsAdmin(), F.data == 'settings_studio')
+async def admin_settings_studio_command_inline(callback: CallbackQuery) -> None:
+    """Settings Studio Menu Inline Command"""
+    buttons = await admin_inline_keyboard.settings_studio_inline_keyboards()
+    await callback.message.answer(
+        admin_text.SETTINGS_STUDIO_MENU_TEXT,
+        reply_markup=buttons,
+    )
+
+
+# ================================================================= Settings Studio - Tech Support
+
+@router.callback_query(IsAdmin(), F.data == 'studio_tech_support')
+async def admin_settings_tech_support_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Settings Tech Support Menu Inline Command"""
+    # Check Exists Tech Support
+    is_exist: bool = await service_admin.check_exist_tech_support(session)
+    buttons = await admin_inline_keyboard.settings_tech_support_inline_keyboards(is_exist)
+    await callback.message.answer(
+        admin_text.SETTINGS_STUDIO_MENU_TEXT,
+        reply_markup=buttons,
+    )
+
+
+@router.callback_query(IsAdmin(), F.data.in_({'add_tech_support', 'edit_tech_support'}))
+async def admin_add_tech_support_command_inline(callback: CallbackQuery, state: FSMContext) -> None:
+    """Add Tech Support Command Inline"""
+    cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
+    await state.set_state(admin_states.TechSupport.username)
+    await callback.message.answer(
+        **admin_text.ADD_TECH_SUPPORT_USERNAME.as_kwargs(),
+        reply_markup=cancel_button,
+    )
+
+
+@router.message(IsAdmin(), admin_states.TechSupport.username, F.text.casefold() != 'отмена')
+async def admin_add_tech_support_username(message: Message, state: FSMContext) -> None:
+    """Add Tech Support Username Command reply"""
+    if not message.text:
+        await message.answer(**admin_text.ADD_TECH_SUPPORT_USERNAME.as_kwargs())
+        return
+    await state.update_data(username=message.text)
+    await state.set_state(admin_states.TechSupport.email)
+    await message.answer(**admin_text.ADD_TECH_SUPPORT_EMAIL.as_kwargs())
+
+
+@router.message(IsAdmin(), admin_states.TechSupport.email, F.text.casefold() != 'отмена')
+async def admin_add_tech_support_email(message: Message, state: FSMContext, session: AsyncSession) -> None:
+    """Add Tech Support Email Command reply"""
+    # Check Is Email
+    is_email: bool = utils_func.check_is_email(message.text)
+    if not is_email:
+        await message.answer(admin_text.NOT_VALID_EMAIL_TEXT)
+        return
+
+    # Get State Data
+    await state.update_data(email=message.text)
+    data: dict = await state.get_data()
+    await state.clear()
+
+    # Check Exists Tech Support
+    is_exist: bool = await service_admin.check_exist_tech_support(session)
+    if is_exist:
+        # Update To Database
+        await service_admin.update_tech_support(**data, message=message, session=session)
+    else:
+        # Added To Database
+        await service_admin.create_tech_support(**data, message=message, session=session)
+
+
+@router.callback_query(IsAdmin(), F.data == 'show_tech_support')
+async def admin_show_tech_support_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Show Tech Support Command Inline"""
+    tech_support = await service_admin.get_tech_support(session)
+    await callback.message.answer(
+        admin_text.TECH_SUPPORT_INFO.format(
+            username=tech_support.username,
+            email=tech_support.email,
+        ),
+        parse_mode=ParseMode.HTML,
+    )

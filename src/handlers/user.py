@@ -117,7 +117,9 @@ async def user_create_order_tech_task(message: Message, state: FSMContext) -> No
     await message.answer(**user_text.CREATE_ORDER_TEXT_TECH_TASK.as_kwargs(), reply_markup=buttons)
 
 
-@router.callback_query(~IsAdmin(), IsBanUser(), user_states.OrderStates.tech_task_filename, F.data == 'web_site_tech_task_skip')
+@router.callback_query(~IsAdmin(),
+                       IsBanUser(),
+                       user_states.OrderStates.tech_task_filename, F.data == 'web_site_tech_task_skip')
 async def user_create_order_tech_task_skip(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
     """"Create Order tech task skip Command Inline"""
     await state.update_data(tech_task_filename=None)
@@ -135,7 +137,9 @@ async def user_create_order_tech_task_skip(callback: CallbackQuery, state: FSMCo
         await utils_func.send_bot_message(callback.bot, admin_id, user_text.NOTIFY_NEW_ORDER)
 
 
-@router.callback_query(~IsAdmin(), IsBanUser(), user_states.OrderStates.tech_task_filename, F.data == 'web_site_type_app_upload')
+@router.callback_query(~IsAdmin(),
+                       IsBanUser(),
+                       user_states.OrderStates.tech_task_filename, F.data == 'web_site_type_app_upload')
 async def user_create_order_tech_task_upload(callback: CallbackQuery) -> None:
     """Create Order tech task upload Command Inline"""
     skip_button = await user_reply_keyboard.skip_reply_keyboard()
@@ -418,5 +422,12 @@ async def user_get_project_info_command_inline(callback: CallbackQuery, session:
 # =================================================================
 
 @router.message(~IsAdmin(), IsBanUser(), F.text == '🛠 Тех.поддержка')
-async def user_support_command_reply(message: Message) -> None:
-    await message.answer(user_text.SUPPORT_TEXT)
+async def user_support_command_reply(message: Message, session: AsyncSession) -> None:
+    """Tech Support Command Reply"""
+    tech_support = await service_user.get_tech_support(session)
+    if tech_support:
+        await message.answer(
+            user_text.SUPPORT_TEXT.format(username=tech_support.username, email=tech_support.email),
+        )
+    else:
+        await message.answer(user_text.SUPPORT_TEXT_NOT_FOUND)

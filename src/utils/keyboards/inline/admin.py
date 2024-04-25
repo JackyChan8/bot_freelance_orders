@@ -125,6 +125,9 @@ async def settings_inline_keyboards() -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(text='🗄 Наши Работы', callback_data='our_jobs'),
             ],
+            [
+                InlineKeyboardButton(text='🏛 Студия', callback_data='settings_studio')
+            ],
         ]
     )
 
@@ -160,4 +163,33 @@ async def get_project_info_inline_keyboard(project_id: int, deleted: bool) -> In
         InlineKeyboardButton(text='✏️ Технологии', callback_data=f'edit_project_technology_{project_id}'),
         InlineKeyboardButton(text='✏️ Фото', callback_data=f'edit_project_images_{project_id}'),
     )
+    return builder.as_markup()
+
+
+# ================================================================= Settings Studio
+async def settings_studio_inline_keyboards() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='💰 Цены', callback_data='studio_prices'),
+                InlineKeyboardButton(text='👨‍👩‍👧‍👧 О команде', callback_data='studio_about_team'),
+            ],
+            [
+                InlineKeyboardButton(text='⚙️ Тех.Поддержка', callback_data='studio_tech_support')
+            ],
+        ]
+    )
+
+
+async def settings_tech_support_inline_keyboards(exist_tech_support: bool) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    if exist_tech_support:
+        builder.row(
+            InlineKeyboardButton(text='👁 Показать', callback_data='show_tech_support'),
+            InlineKeyboardButton(text='✏️ Изменить', callback_data='edit_tech_support'),
+        )
+    else:
+        builder.row(
+            InlineKeyboardButton(text='➕ Добавить', callback_data='add_tech_support')
+        )
     return builder.as_markup()
