@@ -5,10 +5,9 @@ from sqlalchemy import select, insert, update, distinct, exists, func, desc, cas
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import true, false, null
 
-from models import Users, Orders, ReferralSystem, PromoCode, Reviews, Projects, Images, TechSupport
+from models import Users, Orders, ReferralSystem, PromoCode, Reviews, Projects, Images, TechSupport, Prices, AboutTeam
 from utils.text import user as user_text
 from utils.text import admin as admin_text
-from utils.keyboards.inline import admin as admin_inline_keyboard
 from utils.keyboards.reply import user as user_reply_keyboard
 from utils.keyboards.reply import admin as admin_reply_keyboard
 from utils.utils_func import statuses
@@ -63,7 +62,7 @@ async def get_user_id_by_username(username: str, session: AsyncSession) -> int:
     return result.scalar()
 
 
-async def get_user_info(user_id: int, session: AsyncSession):
+async def get_user_info(user_id: int, session: AsyncSession) -> Row[tuple[Any, Any]] | None:
     """Get User Information By Username"""
     query = (
         select(
@@ -784,7 +783,7 @@ async def check_exist_tech_support(session: AsyncSession) -> bool:
     return result.scalar()
 
 
-async def get_tech_support(session: AsyncSession):
+async def get_tech_support(session: AsyncSession) -> Row[tuple[Any, Any]] | None:
     """Get Info About Tech Support"""
     result = await session.execute(
         select(TechSupport.username, TechSupport.email)
@@ -794,7 +793,7 @@ async def get_tech_support(session: AsyncSession):
 
 async def update_tech_support(username: str, email: str, message: Message, session: AsyncSession) -> None:
     """Update Tech Support Service"""
-    buttons = await admin_inline_keyboard.settings_studio_inline_keyboards()
+    buttons = await admin_reply_keyboard.start_reply_keyboard()
     query = (
         update(TechSupport)
         .where(TechSupport.id == 1)
@@ -813,7 +812,7 @@ async def update_tech_support(username: str, email: str, message: Message, sessi
 
 async def create_tech_support(username: str, email: str, message: Message, session: AsyncSession) -> None:
     """Create Tech Support Service"""
-    buttons = await admin_inline_keyboard.settings_studio_inline_keyboards()
+    buttons = await admin_reply_keyboard.start_reply_keyboard()
     query = (
         insert(TechSupport)
         .values(username=username, email=email)
@@ -825,4 +824,106 @@ async def create_tech_support(username: str, email: str, message: Message, sessi
     except Exception as exc:
         await session.rollback()
         await message.answer('Произошла ошибка при Добавлении Информации по Технической Поддержки')
+        await message.answer(str(exc), reply_markup=buttons)
+
+
+# ================================================================= Prices
+async def check_exist_prices(session: AsyncSession) -> bool:
+    """Check Exist Prices Service"""
+    result = await session.execute(select(exists(Prices.id)))
+    return result.scalar()
+
+
+async def get_prices(session: AsyncSession) -> Row[tuple[Any, Any]] | None:
+    """Get Info Prices Support"""
+    result = await session.execute(
+        select(Prices.text)
+    )
+    return result.first()
+
+
+async def update_prices(text: str, message: Message, session: AsyncSession) -> None:
+    """Update Prices Service"""
+    buttons = await admin_reply_keyboard.start_reply_keyboard()
+    query = (
+        update(Prices)
+        .where(Prices.id == 1)
+        .values(text=text)
+        .execution_options(synchronize_session='fetch')
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(admin_text.UPDATE_SUCCESS, reply_markup=buttons)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при Изменении Информации о Ценах')
+        await message.answer(str(exc), reply_markup=buttons)
+
+
+async def create_prices(text: str, message: Message, session: AsyncSession) -> None:
+    """Create Prices Service"""
+    buttons = await admin_reply_keyboard.start_reply_keyboard()
+    query = (
+        insert(Prices)
+        .values(text=text)
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(admin_text.ADD_SUCCESS, reply_markup=buttons)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при Добавлении Цен')
+        await message.answer(str(exc), reply_markup=buttons)
+
+
+# ================================================================= About Team
+async def check_exist_about_team(session: AsyncSession) -> bool:
+    """Check Exist About Team Service"""
+    result = await session.execute(select(exists(AboutTeam.id)))
+    return result.scalar()
+
+
+async def get_about_team(session: AsyncSession) -> Row[tuple[Any, Any]] | None:
+    """Get Info About Team Support"""
+    result = await session.execute(
+        select(AboutTeam.text)
+    )
+    return result.first()
+
+
+async def update_about_team(text: str, message: Message, session: AsyncSession) -> None:
+    """Update About Team Service"""
+    buttons = await admin_reply_keyboard.start_reply_keyboard()
+    query = (
+        update(AboutTeam)
+        .where(AboutTeam.id == 1)
+        .values(text=text)
+        .execution_options(synchronize_session='fetch')
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(admin_text.UPDATE_SUCCESS, reply_markup=buttons)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при Изменении Информации о Команде')
+        await message.answer(str(exc), reply_markup=buttons)
+
+
+async def create_about_team(text: str, message: Message, session: AsyncSession) -> None:
+    """Create About Team Service"""
+    buttons = await admin_reply_keyboard.start_reply_keyboard()
+    query = (
+        insert(AboutTeam)
+        .values(text=text)
+    )
+    try:
+        await session.execute(query)
+        await session.commit()
+        await message.answer(admin_text.ADD_SUCCESS, reply_markup=buttons)
+    except Exception as exc:
+        await session.rollback()
+        await message.answer('Произошла ошибка при Добавлении Цен')
         await message.answer(str(exc), reply_markup=buttons)

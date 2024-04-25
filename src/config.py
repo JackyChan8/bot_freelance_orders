@@ -19,8 +19,6 @@ class BotSettings(BaseSettings):
     BOT_TOKEN: SecretStr
     ADMINS_ID: list[int]
     BOT_USERNAME: str
-    USERNAME_ADMIN: str
-    EMAIL_ADMIN: str
 
     POSTGRES_HOST: str
     POSTGRES_PORT: int

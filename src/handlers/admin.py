@@ -567,13 +567,37 @@ async def admin_settings_studio_command_inline(callback: CallbackQuery) -> None:
 
 
 # ================================================================= Settings Studio - Tech Support
+services_db = {
+    'exist': {
+        'tech_support': service_admin.check_exist_tech_support,
+        'prices': service_admin.check_exist_prices,
+        'about_team': service_admin.check_exist_about_team,
+    },
+    'create': {
+        'tech_support': service_admin.create_tech_support,
+        'prices': service_admin.create_prices,
+        'about_team': service_admin.create_about_team,
+    },
+    'update': {
+        'tech_support': service_admin.update_tech_support,
+        'prices': service_admin.update_prices,
+        'about_team': service_admin.update_about_team,
+    },
+    'get': {
+        'tech_support': service_admin.get_tech_support,
+        'prices': service_admin.get_prices,
+        'about_team': service_admin.get_about_team,
+    }
+}
 
-@router.callback_query(IsAdmin(), F.data == 'studio_tech_support')
+
+@router.callback_query(IsAdmin(), F.data.in_({'studio_about_team', 'studio_prices', 'studio_tech_support'}))
 async def admin_settings_tech_support_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Settings Tech Support Menu Inline Command"""
     # Check Exists Tech Support
-    is_exist: bool = await service_admin.check_exist_tech_support(session)
-    buttons = await admin_inline_keyboard.settings_tech_support_inline_keyboards(is_exist)
+    type_callback: str = callback.data.split('studio_')[-1]
+    is_exist: bool = await services_db.get('exist').get(type_callback)(session)
+    buttons = await admin_inline_keyboard.settings_tech_support_inline_keyboards(is_exist, type_callback)
     await callback.message.answer(
         admin_text.SETTINGS_STUDIO_MENU_TEXT,
         reply_markup=buttons,
@@ -584,25 +608,25 @@ async def admin_settings_tech_support_command_inline(callback: CallbackQuery, se
 async def admin_add_tech_support_command_inline(callback: CallbackQuery, state: FSMContext) -> None:
     """Add Tech Support Command Inline"""
     cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
-    await state.set_state(admin_states.TechSupport.username)
+    await state.set_state(admin_states.TechSupportState.username)
     await callback.message.answer(
         **admin_text.ADD_TECH_SUPPORT_USERNAME.as_kwargs(),
         reply_markup=cancel_button,
     )
 
 
-@router.message(IsAdmin(), admin_states.TechSupport.username, F.text.casefold() != 'отмена')
+@router.message(IsAdmin(), admin_states.TechSupportState.username, F.text.casefold() != 'отмена')
 async def admin_add_tech_support_username(message: Message, state: FSMContext) -> None:
     """Add Tech Support Username Command reply"""
     if not message.text:
         await message.answer(**admin_text.ADD_TECH_SUPPORT_USERNAME.as_kwargs())
         return
     await state.update_data(username=message.text)
-    await state.set_state(admin_states.TechSupport.email)
+    await state.set_state(admin_states.TechSupportState.email)
     await message.answer(**admin_text.ADD_TECH_SUPPORT_EMAIL.as_kwargs())
 
 
-@router.message(IsAdmin(), admin_states.TechSupport.email, F.text.casefold() != 'отмена')
+@router.message(IsAdmin(), admin_states.TechSupportState.email, F.text.casefold() != 'отмена')
 async def admin_add_tech_support_email(message: Message, state: FSMContext, session: AsyncSession) -> None:
     """Add Tech Support Email Command reply"""
     # Check Is Email
@@ -616,24 +640,68 @@ async def admin_add_tech_support_email(message: Message, state: FSMContext, sess
     data: dict = await state.get_data()
     await state.clear()
 
-    # Check Exists Tech Support
-    is_exist: bool = await service_admin.check_exist_tech_support(session)
-    if is_exist:
-        # Update To Database
-        await service_admin.update_tech_support(**data, message=message, session=session)
-    else:
-        # Added To Database
-        await service_admin.create_tech_support(**data, message=message, session=session)
+    await add_to_db_support_info('tech_support', data, message, session)
 
 
-@router.callback_query(IsAdmin(), F.data == 'show_tech_support')
+@router.callback_query(IsAdmin(), F.data.in_({'show_tech_support', 'show_prices', 'show_about_team'}))
 async def admin_show_tech_support_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Show Tech Support Command Inline"""
-    tech_support = await service_admin.get_tech_support(session)
+    type_: str = callback.data.split('show_')[-1]
+    # Get Data
+    data = await services_db.get('get').get(type_)(session)
+    if type_ == 'tech_support':
+        await callback.message.answer(
+            admin_text.TECH_SUPPORT_INFO.format(
+                username=data[0],
+                email=data[1],
+            ),
+            parse_mode=ParseMode.HTML,
+        )
+    else:
+        await callback.message.answer(
+            admin_text.GET_TEXT.format(text=data[0]),
+            parse_mode=ParseMode.HTML,
+        )
+
+
+# ================================================================= Settings Studio - Prices, About Team
+async def add_to_db_support_info(type_: str, data: dict, message: Message, session: AsyncSession) -> None:
+    """Added To Database Support Commands (Tech.Support, Prices, About Team)"""
+    # Check Exists
+    is_exist: bool = await services_db.get('exist').get(type_)(session)
+    if is_exist:
+        # Update To Database
+        await services_db.get('update').get(type_)(**data, message=message, session=session)
+    else:
+        # Added To Database
+        await services_db.get('create').get(type_)(**data, message=message, session=session)
+
+
+@router.callback_query(IsAdmin(), F.data.in_({'add_prices', 'edit_prices', 'add_about_team', 'edit_about_team'}))
+async def admin_add_prices_command_inline(callback: CallbackQuery, state: FSMContext) -> None:
+    """Add Prices Command Inline"""
+    type_: str = 'prices' if 'prices' in callback.data else 'about_team'
+    cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
+    await state.set_state(admin_states.TextState.text)
+    await state.update_data(type=type_)
     await callback.message.answer(
-        admin_text.TECH_SUPPORT_INFO.format(
-            username=tech_support.username,
-            email=tech_support.email,
-        ),
-        parse_mode=ParseMode.HTML,
+        **admin_text.ADD_TEXT.as_kwargs(),
+        reply_markup=cancel_button,
     )
+
+
+@router.message(IsAdmin(), admin_states.TextState.text, F.text.casefold() != 'отмена')
+async def admin_add_prices_text(message: Message, state: FSMContext, session: AsyncSession) -> None:
+    """Add Prices Command Inline"""
+    if not message.text:
+        await message.answer(**admin_text.ADD_TEXT.as_kwargs())
+        return
+
+    # Get State Data
+    await state.update_data(text=message.text)
+    data: dict = await state.get_data()
+    type_: str = data.get('type')
+    await state.clear()
+    del data['type']
+
+    await add_to_db_support_info(type_, data, message, session)

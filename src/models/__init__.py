@@ -12,6 +12,8 @@ __all__ = (
 )
 
 
-from models.models import Users, Reviews, Orders, ReferralSystem, PromoCode, Projects, Images, TechSupport
+from models.models import (
+    Users, Reviews, Orders, ReferralSystem, PromoCode, Projects, Images, TechSupport, Prices, AboutTeam,
+)
 from models.base_class import Base
 from models.base_class import metadata

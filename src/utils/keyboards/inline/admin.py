@@ -181,15 +181,15 @@ async def settings_studio_inline_keyboards() -> InlineKeyboardMarkup:
     )
 
 
-async def settings_tech_support_inline_keyboards(exist_tech_support: bool) -> InlineKeyboardMarkup:
+async def settings_tech_support_inline_keyboards(is_exist: bool, callback_data: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    if exist_tech_support:
+    if is_exist:
         builder.row(
-            InlineKeyboardButton(text='👁 Показать', callback_data='show_tech_support'),
-            InlineKeyboardButton(text='✏️ Изменить', callback_data='edit_tech_support'),
+            InlineKeyboardButton(text='👁 Показать', callback_data=f'show_{callback_data}'),
+            InlineKeyboardButton(text='✏️ Изменить', callback_data=f'edit_{callback_data}'),
         )
     else:
         builder.row(
-            InlineKeyboardButton(text='➕ Добавить', callback_data='add_tech_support')
+            InlineKeyboardButton(text='➕ Добавить', callback_data=f'add_{callback_data}')
         )
     return builder.as_markup()

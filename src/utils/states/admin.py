@@ -20,6 +20,11 @@ class ProjectEditStates(StatesGroup):
     images = State()
 
 
-class TechSupport(StatesGroup):
+class TechSupportState(StatesGroup):
     username = State()
     email = State()
+
+
+class TextState(StatesGroup):
+    type = State()
+    text = State()

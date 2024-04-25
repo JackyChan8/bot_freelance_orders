@@ -103,3 +103,13 @@ class TechSupport(Base):
         if "@" not in address:
             raise ValueError("failed simple email validation")
         return address
+
+
+class Prices(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class AboutTeam(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    text: Mapped[str] = mapped_column(Text, nullable=False)

@@ -316,8 +316,13 @@ async def user_promo_code_choose_order(callback: CallbackQuery, session: AsyncSe
 
 
 @router.message(~IsAdmin(), IsBanUser(), F.text == '💰 Цены')
-async def user_costs_command_reply(message: Message) -> None:
-    await message.answer('Наши Цены')
+async def user_costs_command_reply(message: Message, session: AsyncSession) -> None:
+    """Prices Reply Command"""
+    prices = await service_user.get_prices(session)
+    if prices:
+        await message.answer(prices[0])
+    else:
+        await message.answer(user_text.PRICES_TEXT_NOT_FOUND)
 
 
 # ================================================================= About Us Menu
@@ -417,6 +422,17 @@ async def user_our_works_command_inline(callback: CallbackQuery, session: AsyncS
 async def user_get_project_info_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get Project Information Command Inline"""
     await utils_func.output_info_project(callback, session, type_user='user')
+
+
+# ================================================================= About Team
+@router.callback_query(~IsAdmin(), F.data == 'our_team')
+async def user_our_team_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Our Team Command Reply"""
+    about_team = await service_user.get_about_team(session)
+    if about_team:
+        await callback.message.answer(about_team[0])
+    else:
+        await callback.message.answer(user_text.ABOUT_TEAM_TEXT_NOT_FOUND)
 
 
 # =================================================================
