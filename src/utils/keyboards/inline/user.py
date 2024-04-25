@@ -93,6 +93,15 @@ async def about_us_inline_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+# ================================================================= Our Jobs
+async def get_project_info_inline_keyboard(project_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='📷 Фотографии', callback_data=f'download_photos_project_{project_id}')]
+        ]
+    )
+
+
 # ================================================================= Reviews
 
 async def reviews_menu_inline_keyboard() -> InlineKeyboardMarkup:

@@ -94,7 +94,6 @@ async def check_is_blocked_users(user_id: int, session: AsyncSession) -> int:
         )
         .where(Users.id == user_id)
     )
-    print('query: ', query)
     result = await session.execute(query)
     return result.scalar()
 
@@ -665,6 +664,28 @@ async def get_projects(*args, session: AsyncSession, offset: int = null(), limit
     """Get Projects Service"""
     query = (
         select(Projects.id)
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await session.execute(query)
+    return result.scalars().all()
+
+
+async def get_count_projects_by_user(*args, session: AsyncSession) -> int:
+    """Get Count Projects User Service"""
+    result = await session.execute(
+        select(func.count('*'))
+        .select_from(Projects)
+        .where(Projects.deleted == false())
+    )
+    return result.scalar()
+
+
+async def get_projects_by_user(*args, session: AsyncSession, offset: int = null(), limit: int = 3):
+    """Get Projects User Service"""
+    query = (
+        select(Projects.id)
+        .where(Projects.deleted == false())
         .limit(limit)
         .offset(offset)
     )

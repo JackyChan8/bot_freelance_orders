@@ -31,6 +31,7 @@ paginationTypeText: dict = {
         'admin': ('👤 Пользователи', services.get_users, 'back_to_users', services.get_count_users)
     },
     'projects': {
+        'user': ('🗄 Работы', services.get_projects_by_user, 'back_to_about_us', services.get_count_projects_by_user),
         'admin': ('🗄 Работы', services.get_projects, 'back_to_settings', services.get_count_projects)
     }
 }
@@ -67,8 +68,8 @@ async def pagination(type_: str,
         data = await pagination_type[1](status, session=session, offset=start_offset)
         count = await pagination_type[-1](status, session=session)
     else:
-        data = await pagination_type[1](user_id, session, offset=start_offset)
-        count = await pagination_type[-1](user_id, session)
+        data = await pagination_type[1](user_id, session=session, offset=start_offset)
+        count = await pagination_type[-1](user_id, session=session)
 
     for data_id in data:
         if type_ == 'users':

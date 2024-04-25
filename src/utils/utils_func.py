@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from services import services as service_user
 from utils.text import user as user_text
+from utils.text import admin as admin_text
 from utils import static_path
 from utils.keyboards.inline import user as user_inline_keyboard
 from utils.keyboards.inline import admin as admin_inline_keyboard
@@ -117,6 +118,27 @@ async def output_info_review(
     if is_admin:
         buttons = await admin_inline_keyboard.get_review_info_inline_keyboard(review.id, review.is_publish)
     await message.answer(text, reply_markup=buttons, parse_mode=ParseMode.HTML)
+
+
+async def output_info_project(callback: CallbackQuery, session: AsyncSession, type_user: str = 'user'):
+    """Output Information Project"""
+    project_id: int = int(callback.data.split('№')[-1])
+    # Get Project
+    project = await service_user.get_project_by_id(project_id, session)
+    # Output Information Project
+    if type_user == 'user':
+        buttons = await user_inline_keyboard.get_project_info_inline_keyboard(project_id)
+    else:
+        buttons = await admin_inline_keyboard.get_project_info_inline_keyboard(project_id, project.deleted)
+    await callback.message.answer(
+        admin_text.JOBS_INFO_TEXT.format(
+            title=project.title,
+            description=project.description,
+            technology=project.technology,
+            project_created=project.created_at,
+        ),
+        reply_markup=buttons,
+    )
 
 
 async def get_files_name_download_file(message: Message, album: list[Message] = None) -> list[str]:

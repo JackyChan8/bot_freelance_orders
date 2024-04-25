@@ -392,6 +392,29 @@ async def user_get_review(callback: CallbackQuery, session: AsyncSession) -> Non
     await utils_func.output_info_review(review_id, callback.message, session)
 
 
+# ================================================================= Our Jobs
+@router.callback_query(~IsAdmin(), IsBanUser(), F.data == 'our_works')
+async def user_our_works_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    count_jobs: int = await service_user.get_count_projects_by_user(session=session)
+    if count_jobs:
+        await utils_func.delete_before_message(callback)
+        await pagination(
+            type_='projects',
+            message=callback.message,
+            callback_back='back_to_about_us',
+            callback_type='user',
+            session=session,
+        )
+    else:
+        await callback.message.answer(user_text.NOT_EXISTS_JOBS)
+
+
+@router.callback_query(~IsAdmin(), F.data.startswith('projects_user_№'))
+async def user_get_project_info_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Get Project Information Command Inline"""
+    await utils_func.output_info_project(callback, session, type_user='user')
+
+
 # =================================================================
 
 @router.message(~IsAdmin(), IsBanUser(), F.text == '🛠 Тех.поддержка')

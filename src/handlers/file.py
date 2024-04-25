@@ -30,7 +30,7 @@ async def download_file(callback: CallbackQuery, session: AsyncSession) -> None:
     await callback.bot.send_document(document=file, chat_id=user_id)
 
 
-@router.callback_query(IsAdmin(), F.data.startswith('download_photos_project_'))
+@router.callback_query(IsBanUser(), F.data.startswith('download_photos_project_'))
 async def download_photos(callback: CallbackQuery, session: AsyncSession) -> None:
     """Download Photos Project"""
     project_id: int = int(callback.data.split('_')[-1])

@@ -481,20 +481,7 @@ async def admin_change_project_command_inline(callback: CallbackQuery, session: 
 @router.callback_query(IsAdmin(), F.data.startswith('projects_admin_№'))
 async def admin_get_project_info_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get Project Information Command Inline"""
-    project_id: int = int(callback.data.split('№')[-1])
-    # Get Project
-    project = await service_admin.get_project_by_id(project_id, session)
-    # Output Information Project
-    buttons = await admin_inline_keyboard.get_project_info_inline_keyboard(project_id, project.deleted)
-    await callback.message.answer(
-        admin_text.JOBS_INFO_TEXT.format(
-            title=project.title,
-            description=project.description,
-            technology=project.technology,
-            project_created=project.created_at,
-        ),
-        reply_markup=buttons,
-    )
+    await utils_func.output_info_project(callback, session, type_user='admin')
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('publish_project_') | F.data.startswith('unpublish_project_'))
