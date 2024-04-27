@@ -1,6 +1,6 @@
 from aiogram.utils.formatting import Bold
 
-from utils.utils_func import statuses
+from src.utils.utils_func import statuses
 
 START_TEXT = """
 👋 Добро пожаловать в админку! 👋

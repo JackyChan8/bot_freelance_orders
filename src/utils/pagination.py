@@ -6,8 +6,8 @@ from aiogram.types import Message
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import decorate_logging
-from services import services
+from src.config import decorate_logging
+from src.services import services
 
 
 paginationTypeText: dict = {

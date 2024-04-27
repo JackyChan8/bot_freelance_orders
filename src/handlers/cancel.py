@@ -2,9 +2,9 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from utils.keyboards.reply import admin as admin_reply_keyboard
-from utils.keyboards.reply import user as user_reply_keyboard
-from config import settings, decorate_logging
+from src.utils.keyboards.reply import admin as admin_reply_keyboard
+from src.utils.keyboards.reply import user as user_reply_keyboard
+from src.config import settings, decorate_logging
 
 router = Router(name='cancel')
 

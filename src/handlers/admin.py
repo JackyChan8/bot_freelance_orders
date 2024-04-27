@@ -6,16 +6,16 @@ from aiogram.types import Message, CallbackQuery, ContentType
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services import services as service_admin
-from utils import utils_func
-from utils.filters import IsAdmin
-from config import decorate_logging
-from utils.text import admin as admin_text
-from utils.keyboards.reply import user as user_reply_keyboard
-from utils.keyboards.inline import admin as admin_inline_keyboard
-from utils.keyboards.reply import admin as admin_reply_keyboard
-from utils.pagination import pagination
-from utils.states import admin as admin_states
+from src.services import services as service_admin
+from src.utils import utils_func
+from src.utils.filters import IsAdmin
+from src.config import decorate_logging
+from src.utils.text import admin as admin_text
+from src.utils.keyboards.reply import user as user_reply_keyboard
+from src.utils.keyboards.inline import admin as admin_inline_keyboard
+from src.utils.keyboards.reply import admin as admin_reply_keyboard
+from src.utils.pagination import pagination
+from src.utils.states import admin as admin_states
 
 
 router = Router(name='admin')

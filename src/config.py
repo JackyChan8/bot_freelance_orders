@@ -6,9 +6,9 @@ from typing import Type, Any
 
 from pydantic import SecretStr
 from pydantic.fields import FieldInfo
-from pydantic_settings import BaseSettings, EnvSettingsSource, PydanticBaseSettingsSource
+from pydantic_settings import BaseSettings, EnvSettingsSource, PydanticBaseSettingsSource, SettingsConfigDict
 
-from utils.static_path import LOGS_PATH
+from src.utils.static_path import LOGS_PATH
 
 
 class AdminsParse(EnvSettingsSource):
@@ -21,6 +21,7 @@ class AdminsParse(EnvSettingsSource):
 
 
 class BotSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding='utf-8', case_sensitive=True)
     # Bot
     BOT_TOKEN: SecretStr
     ADMINS_ID: list[int]
@@ -70,9 +71,9 @@ class BotSettings(BaseSettings):
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (AdminsParse(settings_cls),)
 
-    class Config:
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
+    # class Config:
+    #     env_file = '.env'
+    #     env_file_encoding = 'utf-8'
 
 
 settings = BotSettings()

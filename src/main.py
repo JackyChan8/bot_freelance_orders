@@ -6,10 +6,10 @@ from aiogram.client.bot import DefaultBotProperties
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from utils.default_commands import set_commands
-from handlers import user, admin, echo, cancel, file, pagination
-from middlewares import middlewares
-from config import settings, logger
+from src.utils.default_commands import set_commands
+from src.handlers import user, admin, echo, cancel, file, pagination
+from src.middlewares import middlewares
+from src.config import settings, logger
 
 
 async def main():

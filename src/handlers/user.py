@@ -5,16 +5,16 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import settings, decorate_logging
-from utils.filters import IsAdmin, IsBanUser
-from utils.states import user as user_states
-from services import services as service_user
-from utils.text import user as user_text
-from utils import static_path as photo_user
-from utils.pagination import pagination
-from utils.keyboards.reply import user as user_reply_keyboard
-from utils.keyboards.inline import user as user_inline_keyboard
-from utils import utils_func
+from src.config import settings, decorate_logging
+from src.utils.filters import IsAdmin, IsBanUser
+from src.utils.states import user as user_states
+from src.services import services as service_user
+from src.utils.text import user as user_text
+from src.utils import static_path as photo_user
+from src.utils.pagination import pagination
+from src.utils.keyboards.reply import user as user_reply_keyboard
+from src.utils.keyboards.inline import user as user_inline_keyboard
+from src.utils import utils_func
 
 
 router = Router(name='users')

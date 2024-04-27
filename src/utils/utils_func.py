@@ -6,13 +6,13 @@ from aiogram import Bot
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import decorate_logging
-from services import services as service_user
-from utils.text import user as user_text
-from utils.text import admin as admin_text
-from utils import static_path
-from utils.keyboards.inline import user as user_inline_keyboard
-from utils.keyboards.inline import admin as admin_inline_keyboard
+from src.config import decorate_logging
+from src.services import services as service_user
+from src.utils.text import user as user_text
+from src.utils.text import admin as admin_text
+from src.utils import static_path
+from src.utils.keyboards.inline import user as user_inline_keyboard
+from src.utils.keyboards.inline import admin as admin_inline_keyboard
 
 
 statuses = {

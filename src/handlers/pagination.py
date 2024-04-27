@@ -4,9 +4,9 @@ from aiogram.types import CallbackQuery
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from utils.pagination import pagination, Pagination, paginationTypeText
-from config import decorate_logging
-from utils import utils_func
+from src.utils.pagination import pagination, Pagination, paginationTypeText
+from src.config import decorate_logging
+from src.utils import utils_func
 
 router = Router(name='pagination')
 

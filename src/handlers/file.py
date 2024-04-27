@@ -3,10 +3,10 @@ from aiogram.types import CallbackQuery, FSInputFile, InputFile
 from aiogram.utils.media_group import MediaGroupBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from utils.filters import IsBanUser, IsAdmin
-from utils import static_path as photo_user
-from config import decorate_logging
-from services import services
+from src.utils.filters import IsBanUser, IsAdmin
+from src.utils import static_path as photo_user
+from src.config import decorate_logging
+from src.services import services
 
 
 type_service = {

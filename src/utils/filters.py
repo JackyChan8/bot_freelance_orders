@@ -3,8 +3,8 @@ from aiogram.filters import BaseFilter
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import settings
-from services import services
+from src.config import settings
+from src.services import services
 
 
 class IsAdmin(BaseFilter):

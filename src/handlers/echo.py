@@ -1,8 +1,8 @@
 from aiogram.types import Message
 from aiogram import Router
 
-from utils.text.user import NOT_FOUND_COMMAND
-from config import decorate_logging
+from src.utils.text.user import NOT_FOUND_COMMAND
+from src.config import decorate_logging
 
 router = Router(name='echo')
 
