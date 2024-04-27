@@ -5,7 +5,7 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import settings
+from config import settings, decorate_logging
 from utils.filters import IsAdmin, IsBanUser
 from utils.states import user as user_states
 from services import services as service_user
@@ -21,6 +21,7 @@ router = Router(name='users')
 
 
 @router.message(~IsAdmin(), IsBanUser(), CommandStart())
+@decorate_logging
 async def user_start_command(message: Message, command: CommandObject, session: AsyncSession) -> None:
     """Start TG Bot Command"""
     user_id: int = message.from_user.id
@@ -42,6 +43,7 @@ async def user_start_command(message: Message, command: CommandObject, session: 
 
 
 @router.message(~IsAdmin(), IsBanUser(), F.text == '👤 Профиль')
+@decorate_logging
 async def user_profile_command_reply(message: Message, session: AsyncSession) -> None:
     """Profile Reply Command"""
     buttons = await user_inline_keyboard.profile_inline_keyboard()
@@ -57,6 +59,7 @@ async def user_profile_command_reply(message: Message, session: AsyncSession) ->
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data == 'back_to_profile')
+@decorate_logging
 async def user_profile_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Back To Profile Inline Command"""
     await utils_func.delete_before_message(callback)
@@ -74,6 +77,7 @@ async def user_profile_command_inline(callback: CallbackQuery, session: AsyncSes
 
 # ================================================================= Order
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data == 'create_orders')
+@decorate_logging
 async def user_create_order_type_app(callback: CallbackQuery, state: FSMContext) -> None:
     """Create Order type application Command Inline"""
     buttons = await user_inline_keyboard.create_order_type_app()
@@ -88,6 +92,7 @@ async def user_create_order_type_app(callback: CallbackQuery, state: FSMContext)
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), user_states.OrderStates.order_type)
+@decorate_logging
 async def user_create_order_description(callback: CallbackQuery, state: FSMContext) -> None:
     """Create Order description Command Inline"""
     type_app: dict = {
@@ -106,6 +111,7 @@ async def user_create_order_description(callback: CallbackQuery, state: FSMConte
 
 
 @router.message(~IsAdmin(), IsBanUser(), user_states.OrderStates.description, F.text.casefold() != 'отмена')
+@decorate_logging
 async def user_create_order_tech_task(message: Message, state: FSMContext) -> None:
     """Create Order tech task Command Reply"""
     if not message.text:
@@ -120,6 +126,7 @@ async def user_create_order_tech_task(message: Message, state: FSMContext) -> No
 @router.callback_query(~IsAdmin(),
                        IsBanUser(),
                        user_states.OrderStates.tech_task_filename, F.data == 'web_site_tech_task_skip')
+@decorate_logging
 async def user_create_order_tech_task_skip(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
     """"Create Order tech task skip Command Inline"""
     await state.update_data(tech_task_filename=None)
@@ -140,6 +147,7 @@ async def user_create_order_tech_task_skip(callback: CallbackQuery, state: FSMCo
 @router.callback_query(~IsAdmin(),
                        IsBanUser(),
                        user_states.OrderStates.tech_task_filename, F.data == 'web_site_type_app_upload')
+@decorate_logging
 async def user_create_order_tech_task_upload(callback: CallbackQuery) -> None:
     """Create Order tech task upload Command Inline"""
     skip_button = await user_reply_keyboard.skip_reply_keyboard()
@@ -147,6 +155,7 @@ async def user_create_order_tech_task_upload(callback: CallbackQuery) -> None:
 
 
 @router.message(~IsAdmin(), IsBanUser(), user_states.OrderStates.tech_task_filename, F.text.casefold() == 'пропустить')
+@decorate_logging
 async def user_create_order_skip_task_tech_upload(message: Message, state: FSMContext, session: AsyncSession) -> None:
     """Create Order skip upload tech task Command Reply"""
     await state.update_data(tech_task_filename=None)
@@ -157,6 +166,7 @@ async def user_create_order_skip_task_tech_upload(message: Message, state: FSMCo
 
 
 @router.message(~IsAdmin(), IsBanUser(), user_states.OrderStates.tech_task_filename)
+@decorate_logging
 async def user_create_order_tech_task_upload_finish(message: Message, state: FSMContext, session: AsyncSession) -> None:
     """Create Order upload tech task Command Reply"""
     if not message.document:
@@ -175,6 +185,7 @@ async def user_create_order_tech_task_upload_finish(message: Message, state: FSM
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data == 'my_orders')
+@decorate_logging
 async def user_get_my_orders(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get My Orders Command Inline"""
     user_id: int = callback.from_user.id
@@ -187,6 +198,7 @@ async def user_get_my_orders(callback: CallbackQuery, session: AsyncSession) -> 
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data.startswith('order_user_№'))
+@decorate_logging
 async def user_get_my_order(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get Information Order Command Inline"""
     user_id: int = callback.from_user.id
@@ -200,6 +212,7 @@ async def user_get_my_order(callback: CallbackQuery, session: AsyncSession) -> N
 # ================================================================= Referral System
 
 @router.message(~IsAdmin(), IsBanUser(), F.text == '💎 Ищем партнёров!')
+@decorate_logging
 async def user_found_partners_command_reply(message: Message) -> None:
     """Found Partners Command Reply"""
     await message.answer(
@@ -212,6 +225,7 @@ async def user_found_partners_command_reply(message: Message) -> None:
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), (F.data == 'referral_systems') | (F.data == 'back_to_referral_history'))
+@decorate_logging
 async def referral_system_info(callback: CallbackQuery, session: AsyncSession) -> None:
     """Referral System Command Inline"""
     await utils_func.delete_before_message(callback)
@@ -230,6 +244,7 @@ async def referral_system_info(callback: CallbackQuery, session: AsyncSession) -
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data == 'referral_history_pay')
+@decorate_logging
 async def referral_system_history_pay(callback: CallbackQuery) -> None:
     """Referral System History Accrual Command Inline"""
     await utils_func.delete_before_message(callback)
@@ -243,6 +258,7 @@ async def referral_system_history_pay(callback: CallbackQuery) -> None:
 
 # ================================================================= Promo Code
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data == 'my_promo_codes')
+@decorate_logging
 async def user_my_promo_codes_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get My Promo Codes Command Inline"""
     user_id: int = callback.from_user.id
@@ -261,6 +277,7 @@ async def user_my_promo_codes_command_inline(callback: CallbackQuery, session: A
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data.startswith('promocode_user_№'))
+@decorate_logging
 async def user_get_my_promo_code_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get Information Promo Code Command Inline"""
     user_id: int = callback.from_user.id
@@ -272,6 +289,7 @@ async def user_get_my_promo_code_command_inline(callback: CallbackQuery, session
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data.startswith('apply_promo_code_'))
+@decorate_logging
 async def user_apply_promo_code_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Output Orders for applying Promo Code"""
     promo_code_id: int = int(callback.data.split('_')[-1])
@@ -291,6 +309,7 @@ async def user_apply_promo_code_command_inline(callback: CallbackQuery, session:
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data.startswith('promocode_order_'))
+@decorate_logging
 async def user_promo_code_choose_order(callback: CallbackQuery, session: AsyncSession) -> None:
     """Choose Order for applying Promo Code"""
     data = callback.data.split('_')
@@ -316,6 +335,7 @@ async def user_promo_code_choose_order(callback: CallbackQuery, session: AsyncSe
 
 
 @router.message(~IsAdmin(), IsBanUser(), F.text == '💰 Цены')
+@decorate_logging
 async def user_costs_command_reply(message: Message, session: AsyncSession) -> None:
     """Prices Reply Command"""
     prices = await service_user.get_prices(session)
@@ -327,6 +347,7 @@ async def user_costs_command_reply(message: Message, session: AsyncSession) -> N
 
 # ================================================================= About Us Menu
 @router.message(~IsAdmin(), IsBanUser(), F.text == '‍💻 О нас')
+@decorate_logging
 async def user_about_us_command_reply(message: Message) -> None:
     """About us Reply Command"""
     buttons = await user_inline_keyboard.about_us_inline_keyboard()
@@ -334,11 +355,13 @@ async def user_about_us_command_reply(message: Message) -> None:
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data == 'back_to_about_us')
+@decorate_logging
 async def user_back_to_about_us(callback: CallbackQuery) -> None:
     await user_about_us_command_reply(callback.message)
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data == 'our_reviews')
+@decorate_logging
 async def user_our_reviews_inline(callback: CallbackQuery) -> None:
     """Review Inline Command"""
     buttons = await user_inline_keyboard.reviews_menu_inline_keyboard()
@@ -347,6 +370,7 @@ async def user_our_reviews_inline(callback: CallbackQuery) -> None:
 
 # ================================================================= Reviews
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data == 'add_review')
+@decorate_logging
 async def user_write_review(callback: CallbackQuery, state: FSMContext) -> None:
     """Write Review Inline Command"""
     cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
@@ -358,6 +382,7 @@ async def user_write_review(callback: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.message(~IsAdmin(), IsBanUser(), user_states.ReviewStates.text, F.text.casefold() != 'отмена')
+@decorate_logging
 async def user_create_review_message(message: Message, state: FSMContext) -> None:
     """Write Text Review Reply Command"""
     buttons = await user_inline_keyboard.reviews_add_rating()
@@ -367,6 +392,7 @@ async def user_create_review_message(message: Message, state: FSMContext) -> Non
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), user_states.ReviewStates.rating)
+@decorate_logging
 async def user_create_review_rating(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
     """Choose Rating Review Inline Command"""
     rating: int = int(callback.data.split('_')[-1])
@@ -378,6 +404,7 @@ async def user_create_review_rating(callback: CallbackQuery, state: FSMContext, 
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data == 'show_review')
+@decorate_logging
 async def user_show_reviews(callback: CallbackQuery, session: AsyncSession) -> None:
     """Show reviews Inline Command"""
     user_id: int = callback.from_user.id
@@ -394,6 +421,7 @@ async def user_show_reviews(callback: CallbackQuery, session: AsyncSession) -> N
 
 
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data.startswith('review_user_№'))
+@decorate_logging
 async def user_get_review(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get Reviews"""
     review_id: int = int(callback.data.split('№')[-1])
@@ -403,6 +431,7 @@ async def user_get_review(callback: CallbackQuery, session: AsyncSession) -> Non
 
 # ================================================================= Our Jobs
 @router.callback_query(~IsAdmin(), IsBanUser(), F.data == 'our_works')
+@decorate_logging
 async def user_our_works_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     count_jobs: int = await service_user.get_count_projects_by_user(session=session)
     if count_jobs:
@@ -419,6 +448,7 @@ async def user_our_works_command_inline(callback: CallbackQuery, session: AsyncS
 
 
 @router.callback_query(~IsAdmin(), F.data.startswith('projects_user_№'))
+@decorate_logging
 async def user_get_project_info_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get Project Information Command Inline"""
     await utils_func.output_info_project(callback, session, type_user='user')
@@ -426,6 +456,7 @@ async def user_get_project_info_command_inline(callback: CallbackQuery, session:
 
 # ================================================================= About Team
 @router.callback_query(~IsAdmin(), F.data == 'our_team')
+@decorate_logging
 async def user_our_team_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Our Team Command Reply"""
     about_team = await service_user.get_about_team(session)
@@ -438,6 +469,7 @@ async def user_our_team_command_inline(callback: CallbackQuery, session: AsyncSe
 # =================================================================
 
 @router.message(~IsAdmin(), IsBanUser(), F.text == '🛠 Тех.поддержка')
+@decorate_logging
 async def user_support_command_reply(message: Message, session: AsyncSession) -> None:
     """Tech Support Command Reply"""
     tech_support = await service_user.get_tech_support(session)

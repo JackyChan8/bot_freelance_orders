@@ -1,8 +1,14 @@
+import sys
+import asyncio
+from loguru import logger
+from functools import wraps
 from typing import Type, Any
 
 from pydantic import SecretStr
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, EnvSettingsSource, PydanticBaseSettingsSource
+
+from utils.static_path import LOGS_PATH
 
 
 class AdminsParse(EnvSettingsSource):
@@ -62,7 +68,7 @@ class BotSettings(BaseSettings):
             dotenv_settings: PydanticBaseSettingsSource,
             file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        return (AdminsParse(settings_cls), )
+        return (AdminsParse(settings_cls),)
 
     class Config:
         env_file = '.env'
@@ -70,3 +76,33 @@ class BotSettings(BaseSettings):
 
 
 settings = BotSettings()
+
+# Logging
+logger.add(
+    sys.stderr,
+    colorize=True,
+    format='<blue>{time}</blue> <green>{level}</green> <red>{message}</red>',
+    filter='my_module',
+    level='INFO',
+)
+logger.add(f'{LOGS_PATH}/file_1.log', rotation='100 MB', compression='zip')
+
+
+def decorate_logging(fn):
+    """Decorator for logging"""
+    if asyncio.iscoroutinefunction(fn):
+        @wraps(fn)
+        async def wrapper(*args, **kwargs):
+            try:
+                return await fn(*args, **kwargs)
+            except Exception as exc:
+                logger.patch(lambda r: r.update(function=fn.__name__)).error(f'({fn.__doc__}) - {exc}')
+        return wrapper
+    else:
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            try:
+                return fn(*args, **kwargs)
+            except Exception as exc:
+                logger.patch(lambda r: r.update(function=fn.__name__, message=exc)).error(f'({fn.__doc__}) - {exc}')
+        return wrapper

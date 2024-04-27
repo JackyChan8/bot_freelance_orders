@@ -9,11 +9,11 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from utils.default_commands import set_commands
 from handlers import user, admin, echo, cancel, file, pagination
 from middlewares import middlewares
-from config import settings
+from config import settings, logger
 
 
 async def main():
-    engine = create_async_engine(settings.get_postgres_url(), echo=True)
+    engine = create_async_engine(settings.get_postgres_url())
     async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     bot = Bot(token=settings.BOT_TOKEN.get_secret_value(), default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -37,5 +37,5 @@ async def main():
 
 
 if __name__ == '__main__':
-    print('Bot is Started')
+    logger.info('Bot is Started')
     asyncio.run(main(), debug=False)

@@ -4,12 +4,13 @@ from aiogram.types import Message
 
 from utils.keyboards.reply import admin as admin_reply_keyboard
 from utils.keyboards.reply import user as user_reply_keyboard
-from config import settings
+from config import settings, decorate_logging
 
 router = Router(name='cancel')
 
 
 @router.message(F.text.casefold() == 'отмена')
+@decorate_logging
 async def cancel_handler(message: Message, state: FSMContext) -> None:
     current_state = await state.get_state()
     if current_state is None:

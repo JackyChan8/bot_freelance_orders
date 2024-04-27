@@ -6,6 +6,7 @@ from aiogram.types import Message
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import decorate_logging
 from services import services
 
 
@@ -45,6 +46,7 @@ class Pagination(CallbackData, prefix="pag"):
     status: Optional[str]  # Статус
 
 
+@decorate_logging
 async def pagination(type_: str,
                      message: Message,
                      session: AsyncSession,

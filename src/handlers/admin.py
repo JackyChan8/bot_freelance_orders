@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services import services as service_admin
 from utils import utils_func
 from utils.filters import IsAdmin
+from config import decorate_logging
 from utils.text import admin as admin_text
 from utils.keyboards.reply import user as user_reply_keyboard
 from utils.keyboards.inline import admin as admin_inline_keyboard
@@ -21,12 +22,14 @@ router = Router(name='admin')
 
 
 @router.message(IsAdmin(), CommandStart())
+@decorate_logging
 async def admin_start_command(message: Message) -> None:
     buttons = await admin_reply_keyboard.start_reply_keyboard()
     await message.answer(admin_text.START_TEXT, reply_markup=buttons)
 
 
 @router.callback_query(IsAdmin(), F.data == 'back_to_main_menu')
+@decorate_logging
 async def admin_back_command_inline(callback: CallbackQuery) -> None:
     await admin_start_command(callback.message)
 
@@ -34,6 +37,7 @@ async def admin_back_command_inline(callback: CallbackQuery) -> None:
 # ================================================================= Orders
 
 @router.message(IsAdmin(), F.text == '📦 Заказы')
+@decorate_logging
 async def admin_orders_command_reply(message: Message, session: AsyncSession) -> None:
     buttons = await admin_inline_keyboard.orders_inline_keyboard()
     # Get Count Orders By Status
@@ -53,12 +57,14 @@ async def admin_orders_command_reply(message: Message, session: AsyncSession) ->
 
 
 @router.callback_query(IsAdmin(), F.data == 'back_to_orders')
+@decorate_logging
 async def admin_orders_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     await utils_func.delete_before_message(callback)
     await admin_orders_command_reply(callback.message, session)
 
 
 @router.callback_query(IsAdmin(), F.data.endswith('_show_orders'))
+@decorate_logging
 async def admin_show_orders_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     status: str = callback.data.split('_')[0]
     count_orders: int = await service_admin.get_count_orders_by_status(status, session)
@@ -77,6 +83,7 @@ async def admin_show_orders_command_inline(callback: CallbackQuery, session: Asy
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('order_admin_№'))
+@decorate_logging
 async def admin_get_orders(callback: CallbackQuery, session: AsyncSession) -> None:
     order_id: int = int(callback.data.split('№')[-1])
     # Get Order
@@ -86,6 +93,7 @@ async def admin_get_orders(callback: CallbackQuery, session: AsyncSession) -> No
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('change_status_order_'))
+@decorate_logging
 async def admin_change_status_order_choose(callback: CallbackQuery) -> None:
     """Change Status Order, Choose Status"""
     order_id: int = int(callback.data.split('_')[-1])
@@ -94,6 +102,7 @@ async def admin_change_status_order_choose(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(IsAdmin(), F.data.contains('save_choose_status'))
+@decorate_logging
 async def admin_change_status_order(callback: CallbackQuery, session: AsyncSession) -> None:
     """Change Status Order, Save"""
     data: list = callback.data.split('_')
@@ -114,6 +123,7 @@ async def admin_change_status_order(callback: CallbackQuery, session: AsyncSessi
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('show_customer_order_'))
+@decorate_logging
 async def admin_show_customer_order(callback: CallbackQuery, session: AsyncSession) -> None:
     """Show Customer Order"""
     order_id: int = int(callback.data.split('_')[-1])
@@ -124,6 +134,7 @@ async def admin_show_customer_order(callback: CallbackQuery, session: AsyncSessi
 
 # ================================================================= Promo Codes
 @router.message(IsAdmin(), F.text == '🎟 Промокоды')
+@decorate_logging
 async def admin_promo_code_command_reply(message: Message) -> None:
     """Promo Code Menu Reply Command"""
     buttons = await admin_inline_keyboard.promo_code_inline_keyboards()
@@ -131,6 +142,7 @@ async def admin_promo_code_command_reply(message: Message) -> None:
 
 
 @router.callback_query(IsAdmin(), F.data == 'back_to_promo_code')
+@decorate_logging
 async def admin_promo_code_command_inline(callback: CallbackQuery) -> None:
     """Promo Code Menu Inline Command"""
     buttons = await admin_inline_keyboard.promo_code_inline_keyboards()
@@ -138,6 +150,7 @@ async def admin_promo_code_command_inline(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(IsAdmin(), F.data == 'create_promo_code')
+@decorate_logging
 async def admin_create_promo_code_inline_keyboard(callback: CallbackQuery, state: FSMContext) -> None:
     """Create Promo Code Inline Keyboard"""
     cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
@@ -150,6 +163,7 @@ async def admin_create_promo_code_inline_keyboard(callback: CallbackQuery, state
 
 
 @router.message(IsAdmin(), admin_states.PromoCodeStates.username, F.text.casefold() != 'отмена')
+@decorate_logging
 async def admin_create_promo_code_username(message: Message, state: FSMContext, session: AsyncSession) -> None:
     """Create Promo Code - Set username"""
     if not message.text:
@@ -167,6 +181,7 @@ async def admin_create_promo_code_username(message: Message, state: FSMContext, 
 
 
 @router.message(IsAdmin(), admin_states.PromoCodeStates.discount)
+@decorate_logging
 async def admin_create_promo_code_username(message: Message, state: FSMContext, session: AsyncSession) -> None:
     """Create Promo Code - Set Discount"""
     if not message.text or not message.text.isdigit():
@@ -192,6 +207,7 @@ async def admin_create_promo_code_username(message: Message, state: FSMContext, 
 
 
 @router.callback_query(IsAdmin(), F.data == 'show_promo_code')
+@decorate_logging
 async def admin_show_promo_code_inline_keyboard(callback: CallbackQuery, session: AsyncSession) -> None:
     """Show Promo Code Inline Keyboard"""
     # Get Promo Codes
@@ -210,6 +226,7 @@ async def admin_show_promo_code_inline_keyboard(callback: CallbackQuery, session
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('promocode_admin_№'))
+@decorate_logging
 async def admin_get_promo_code(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get Information Promo Code Command Inline"""
     promo_code_id: int = int(callback.data.split('№')[-1])
@@ -220,6 +237,7 @@ async def admin_get_promo_code(callback: CallbackQuery, session: AsyncSession) -
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('delete_promo_code'))
+@decorate_logging
 async def admin_delete_promo_code(callback: CallbackQuery, session: AsyncSession) -> None:
     """Delete Promo code Command Inline"""
     promo_code_id: int = int(callback.data.split('_')[-1])
@@ -227,6 +245,7 @@ async def admin_delete_promo_code(callback: CallbackQuery, session: AsyncSession
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('show_promo_code_user'))
+@decorate_logging
 async def admin_show_user_promo_code(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get the Owner of the Promo Code Command Inline"""
     promo_code_id: int = int(callback.data.split('_')[-1])
@@ -237,6 +256,7 @@ async def admin_show_user_promo_code(callback: CallbackQuery, session: AsyncSess
 
 # ================================================================= Users
 @router.message(IsAdmin(), F.text == '👤 Пользователи')
+@decorate_logging
 async def admin_users_command_reply(message: Message, session: AsyncSession) -> None:
     """Users Menu Reply Command"""
     count_users: int = await service_admin.get_count_users(session=session)
@@ -248,12 +268,14 @@ async def admin_users_command_reply(message: Message, session: AsyncSession) -> 
 
 
 @router.callback_query(IsAdmin(), F.data == 'back_to_users')
+@decorate_logging
 async def admin_users_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Users Menu Inline Command"""
     await admin_users_command_reply(callback.message, session)
 
 
 @router.callback_query(IsAdmin(), F.data == 'show_users')
+@decorate_logging
 async def show_users_command_inline(callback: CallbackQuery, session: AsyncSession):
     """Get Users Command Inline"""
     count_users: int = await service_admin.get_count_users(session=session)
@@ -271,6 +293,7 @@ async def show_users_command_inline(callback: CallbackQuery, session: AsyncSessi
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('users_admin_№'))
+@decorate_logging
 async def get_user_info_command_inline(callback: CallbackQuery, session: AsyncSession):
     """Get Information User Command Inline"""
     user_id: int = int(callback.data.split('№')[-1])
@@ -291,6 +314,7 @@ async def get_user_info_command_inline(callback: CallbackQuery, session: AsyncSe
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('unblock_user'))
+@decorate_logging
 async def unblock_user_command_inline(callback: CallbackQuery, session: AsyncSession):
     """Unblock User Command Inline"""
     user_id: int = int(callback.data.split('_')[-1])
@@ -303,6 +327,7 @@ async def unblock_user_command_inline(callback: CallbackQuery, session: AsyncSes
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('block_user'))
+@decorate_logging
 async def block_user_command_inline(callback: CallbackQuery, session: AsyncSession):
     """Block User Command Inline"""
     user_id: int = int(callback.data.split('_')[-1])
@@ -316,6 +341,7 @@ async def block_user_command_inline(callback: CallbackQuery, session: AsyncSessi
 
 # ================================================================= Reviews
 @router.message(IsAdmin(), F.text == '#️⃣ Отзывы')
+@decorate_logging
 async def admin_reviews_command_reply(message: Message) -> None:
     """Reviews Menu Reply Command"""
     buttons = await admin_inline_keyboard.reviews_inline_keyboards()
@@ -323,6 +349,7 @@ async def admin_reviews_command_reply(message: Message) -> None:
 
 
 @router.callback_query(IsAdmin(), F.data == 'back_to_reviews')
+@decorate_logging
 async def admin_reviews_command_inline(callback: CallbackQuery) -> None:
     """Reviews Menu Inline Command"""
     buttons = await admin_inline_keyboard.reviews_inline_keyboards()
@@ -330,6 +357,7 @@ async def admin_reviews_command_inline(callback: CallbackQuery) -> None:
 
 
 @router.callback_query(IsAdmin(), F.data == 'show_reviews')
+@decorate_logging
 async def admin_show_reviews_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Show Reviews Inline Command"""
     count_reviews = await service_admin.get_count_reviews(session=session)
@@ -347,6 +375,7 @@ async def admin_show_reviews_command_inline(callback: CallbackQuery, session: As
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('review_admin_№'))
+@decorate_logging
 async def admin_get_review(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get Review Command Inline"""
     review_id: int = int(callback.data.split('№')[-1])
@@ -355,6 +384,7 @@ async def admin_get_review(callback: CallbackQuery, session: AsyncSession) -> No
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('remove_public_review_'))
+@decorate_logging
 async def admin_remove_from_publish_review_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Remove From Publication Review Command Inline"""
     review_id: int = int(callback.data.split('_')[-1])
@@ -362,6 +392,7 @@ async def admin_remove_from_publish_review_command_inline(callback: CallbackQuer
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('add_public_review_'))
+@decorate_logging
 async def admin_publish_review_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Publication Review Command Inline"""
     review_id: int = int(callback.data.split('_')[-1])
@@ -370,6 +401,7 @@ async def admin_publish_review_command_inline(callback: CallbackQuery, session: 
 
 # ================================================================= Settings
 @router.message(IsAdmin(), F.text == '🛠 Настройка')
+@decorate_logging
 async def admin_settings_command_reply(message: Message) -> None:
     """Settings Menu Reply Command"""
     buttons = await admin_inline_keyboard.settings_inline_keyboards()
@@ -380,6 +412,7 @@ async def admin_settings_command_reply(message: Message) -> None:
 
 
 @router.callback_query(IsAdmin(), F.data == 'back_to_settings')
+@decorate_logging
 async def admin_settings_command_inline(callback: CallbackQuery) -> None:
     """Settings Menu Inline Command"""
     buttons = await admin_inline_keyboard.settings_inline_keyboards()
@@ -392,6 +425,7 @@ async def admin_settings_command_inline(callback: CallbackQuery) -> None:
 # ================================================================= Our Jobs
 
 @router.callback_query(IsAdmin(), F.data == 'our_jobs')
+@decorate_logging
 async def admin_tech_support_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Our Project Menu Inline Command"""
     # Check Exists Project
@@ -401,6 +435,7 @@ async def admin_tech_support_command_inline(callback: CallbackQuery, session: As
 
 
 @router.callback_query(IsAdmin(), F.data == 'add_job')
+@decorate_logging
 async def admin_add_project_command_inline(callback: CallbackQuery, state: FSMContext) -> None:
     """Create Project Command Inline"""
     cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
@@ -413,6 +448,7 @@ async def admin_add_project_command_inline(callback: CallbackQuery, state: FSMCo
 
 
 @router.message(IsAdmin(), admin_states.JobStates.title, F.text.casefold() != 'отмена')
+@decorate_logging
 async def admin_add_project_title(message: Message, state: FSMContext) -> None:
     """Create Project title Command Reply"""
     await state.update_data(title=message.text)
@@ -421,6 +457,7 @@ async def admin_add_project_title(message: Message, state: FSMContext) -> None:
 
 
 @router.message(IsAdmin(), admin_states.JobStates.description, F.text.casefold() != 'отмена')
+@decorate_logging
 async def admin_add_project_description(message: Message, state: FSMContext) -> None:
     """Create Project description Command Reply"""
     await state.update_data(description=message.text)
@@ -429,6 +466,7 @@ async def admin_add_project_description(message: Message, state: FSMContext) -> 
 
 
 @router.message(IsAdmin(), admin_states.JobStates.technology, F.text.casefold() != 'отмена')
+@decorate_logging
 async def admin_add_project_technology(message: Message, state: FSMContext) -> None:
     """Create Project technology Command Reply"""
     await state.update_data(technology=message.text)
@@ -439,6 +477,7 @@ async def admin_add_project_technology(message: Message, state: FSMContext) -> N
 @router.message(IsAdmin(),
                 F.content_type.in_([ContentType.PHOTO, ContentType.DOCUMENT]),
                 admin_states.JobStates.images)
+@decorate_logging
 async def admin_add_project_images(message: Message,
                                    state: FSMContext,
                                    session: AsyncSession,
@@ -462,6 +501,7 @@ async def admin_add_project_images(message: Message,
 
 
 @router.callback_query(IsAdmin(), F.data == 'change_project')
+@decorate_logging
 async def admin_change_project_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Change Project Command Inline"""
     count_jobs: int = await service_admin.get_count_projects(session=session)
@@ -479,12 +519,14 @@ async def admin_change_project_command_inline(callback: CallbackQuery, session: 
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('projects_admin_№'))
+@decorate_logging
 async def admin_get_project_info_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Get Project Information Command Inline"""
     await utils_func.output_info_project(callback, session, type_user='admin')
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('publish_project_') | F.data.startswith('unpublish_project_'))
+@decorate_logging
 async def admin_edit_show_project_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Edited Project Visibility Command Inline"""
     data: list[str] = callback.data.split('_')
@@ -494,6 +536,7 @@ async def admin_edit_show_project_command_inline(callback: CallbackQuery, sessio
 
 
 @router.callback_query(IsAdmin(), F.data.startswith('edit_project_'))
+@decorate_logging
 async def admin_edit_project_info_command_inline(callback: CallbackQuery, state: FSMContext) -> None:
     """Edited Project Information Command Inline"""
     data: list[str] = callback.data.split('_')
@@ -520,6 +563,7 @@ async def admin_edit_project_info_command_inline(callback: CallbackQuery, state:
 
 
 @router.message(IsAdmin(), admin_states.ProjectEditStates.text, F.text.casefold() != 'отмена')
+@decorate_logging
 async def admin_save_info_project(message: Message, state: FSMContext, session: AsyncSession) -> None:
     """Save Edited Project Information Command Reply"""
     await state.update_data(text=message.text)
@@ -539,6 +583,7 @@ async def admin_save_info_project(message: Message, state: FSMContext, session: 
 @router.message(IsAdmin(),
                 F.content_type.in_([ContentType.PHOTO, ContentType.DOCUMENT]),
                 admin_states.ProjectEditStates.images)
+@decorate_logging
 async def admin_edit_project_images(message: Message,
                                     state: FSMContext,
                                     session: AsyncSession,
@@ -557,6 +602,7 @@ async def admin_edit_project_images(message: Message,
 
 # ================================================================= Settings Studio
 @router.callback_query(IsAdmin(), F.data == 'settings_studio')
+@decorate_logging
 async def admin_settings_studio_command_inline(callback: CallbackQuery) -> None:
     """Settings Studio Menu Inline Command"""
     buttons = await admin_inline_keyboard.settings_studio_inline_keyboards()
@@ -592,6 +638,7 @@ services_db = {
 
 
 @router.callback_query(IsAdmin(), F.data.in_({'studio_about_team', 'studio_prices', 'studio_tech_support'}))
+@decorate_logging
 async def admin_settings_tech_support_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Settings Tech Support Menu Inline Command"""
     # Check Exists Tech Support
@@ -605,6 +652,7 @@ async def admin_settings_tech_support_command_inline(callback: CallbackQuery, se
 
 
 @router.callback_query(IsAdmin(), F.data.in_({'add_tech_support', 'edit_tech_support'}))
+@decorate_logging
 async def admin_add_tech_support_command_inline(callback: CallbackQuery, state: FSMContext) -> None:
     """Add Tech Support Command Inline"""
     cancel_button = await user_reply_keyboard.cancel_reply_keyboard()
@@ -616,6 +664,7 @@ async def admin_add_tech_support_command_inline(callback: CallbackQuery, state: 
 
 
 @router.message(IsAdmin(), admin_states.TechSupportState.username, F.text.casefold() != 'отмена')
+@decorate_logging
 async def admin_add_tech_support_username(message: Message, state: FSMContext) -> None:
     """Add Tech Support Username Command reply"""
     if not message.text:
@@ -627,6 +676,7 @@ async def admin_add_tech_support_username(message: Message, state: FSMContext) -
 
 
 @router.message(IsAdmin(), admin_states.TechSupportState.email, F.text.casefold() != 'отмена')
+@decorate_logging
 async def admin_add_tech_support_email(message: Message, state: FSMContext, session: AsyncSession) -> None:
     """Add Tech Support Email Command reply"""
     # Check Is Email
@@ -644,6 +694,7 @@ async def admin_add_tech_support_email(message: Message, state: FSMContext, sess
 
 
 @router.callback_query(IsAdmin(), F.data.in_({'show_tech_support', 'show_prices', 'show_about_team'}))
+@decorate_logging
 async def admin_show_tech_support_command_inline(callback: CallbackQuery, session: AsyncSession) -> None:
     """Show Tech Support Command Inline"""
     type_: str = callback.data.split('show_')[-1]
@@ -665,6 +716,7 @@ async def admin_show_tech_support_command_inline(callback: CallbackQuery, sessio
 
 
 # ================================================================= Settings Studio - Prices, About Team
+@decorate_logging
 async def add_to_db_support_info(type_: str, data: dict, message: Message, session: AsyncSession) -> None:
     """Added To Database Support Commands (Tech.Support, Prices, About Team)"""
     # Check Exists
@@ -678,6 +730,7 @@ async def add_to_db_support_info(type_: str, data: dict, message: Message, sessi
 
 
 @router.callback_query(IsAdmin(), F.data.in_({'add_prices', 'edit_prices', 'add_about_team', 'edit_about_team'}))
+@decorate_logging
 async def admin_add_prices_command_inline(callback: CallbackQuery, state: FSMContext) -> None:
     """Add Prices Command Inline"""
     type_: str = 'prices' if 'prices' in callback.data else 'about_team'
@@ -691,6 +744,7 @@ async def admin_add_prices_command_inline(callback: CallbackQuery, state: FSMCon
 
 
 @router.message(IsAdmin(), admin_states.TextState.text, F.text.casefold() != 'отмена')
+@decorate_logging
 async def admin_add_prices_text(message: Message, state: FSMContext, session: AsyncSession) -> None:
     """Add Prices Command Inline"""
     if not message.text:

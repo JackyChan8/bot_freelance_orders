@@ -6,6 +6,7 @@ from aiogram import Bot
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import decorate_logging
 from services import services as service_user
 from utils.text import user as user_text
 from utils.text import admin as admin_text
@@ -25,11 +26,13 @@ statuses = {
 EMAIL_REGEX = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
 
 
+@decorate_logging
 async def delete_before_message(callback: CallbackQuery) -> None:
     """Delete Before Message"""
     await callback.message.delete()
 
 
+@decorate_logging
 async def add_referral_link(user_id: int, referral_id: int, exist_user: bool, message: Message,
                             session: AsyncSession) -> None:
     """Added Referral Link"""
@@ -47,6 +50,7 @@ async def add_referral_link(user_id: int, referral_id: int, exist_user: bool, me
             )
 
 
+@decorate_logging
 async def get_referral_users(user_id: int, callback: CallbackQuery, session: AsyncSession) -> str:
     """Get Referral Users"""
     users = await service_user.get_referral_users_id(user_id, session)
@@ -54,6 +58,7 @@ async def get_referral_users(user_id: int, callback: CallbackQuery, session: Asy
     return '\n'.join([f'@{member.user.username}' for member in chat_members])
 
 
+@decorate_logging
 async def output_info_order(order_id: int, order, message: Message, session: AsyncSession, is_admin: bool = False):
     """Output Information Order"""
     # Get Discount Promo Code to Order
@@ -82,6 +87,7 @@ async def output_info_order(order_id: int, order, message: Message, session: Asy
     await message.answer(text, reply_markup=buttons, parse_mode=ParseMode.HTML)
 
 
+@decorate_logging
 async def output_info_promo_code(
         promo_code_id: int,
         promo_code,
@@ -98,6 +104,7 @@ async def output_info_promo_code(
     await message.answer(text, reply_markup=buttons, parse_mode=ParseMode.HTML)
 
 
+@decorate_logging
 async def output_info_review(
         review_id: int,
         message: Message,
@@ -123,6 +130,7 @@ async def output_info_review(
     await message.answer(text, reply_markup=buttons, parse_mode=ParseMode.HTML)
 
 
+@decorate_logging
 async def output_info_project(callback: CallbackQuery, session: AsyncSession, type_user: str = 'user'):
     """Output Information Project"""
     project_id: int = int(callback.data.split('№')[-1])
@@ -144,6 +152,7 @@ async def output_info_project(callback: CallbackQuery, session: AsyncSession, ty
     )
 
 
+@decorate_logging
 async def get_files_name_download_file(message: Message, album: list[Message] = None) -> list[str]:
     """Get Files Names About Files"""
     files_names: list[str] = []
@@ -165,11 +174,13 @@ async def get_files_name_download_file(message: Message, album: list[Message] = 
     return files_names
 
 
+@decorate_logging
 async def send_bot_message(bot: Bot, chat_id: int, text: str) -> None:
     """Send Message Bot"""
     await bot.send_message(chat_id, text)
 
 
+@decorate_logging
 async def save_document(file_id: int, message: Message) -> str:
     """Save Document"""
     file = await message.bot.get_file(file_id)
@@ -180,6 +191,7 @@ async def save_document(file_id: int, message: Message) -> str:
     return file_name
 
 
+@decorate_logging
 async def get_files(message: Message) -> str:
     """Get Files From Message"""
     if message.photo:
@@ -190,6 +202,7 @@ async def get_files(message: Message) -> str:
     return file_id
 
 
+@decorate_logging
 def check_is_email(text: str) -> bool:
     """Check Regex is Email Address"""
     if re.fullmatch(EMAIL_REGEX, text):

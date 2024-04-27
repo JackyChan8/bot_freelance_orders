@@ -11,9 +11,11 @@ from utils.text import admin as admin_text
 from utils.keyboards.reply import user as user_reply_keyboard
 from utils.keyboards.reply import admin as admin_reply_keyboard
 from utils.utils_func import statuses
+from config import decorate_logging
 
 
 # ================================================================= Users
+@decorate_logging
 async def check_exist_user_by_id(user_id: int, session: AsyncSession) -> bool:
     """Check Exists User By ID"""
     result = await session.execute(
@@ -22,6 +24,7 @@ async def check_exist_user_by_id(user_id: int, session: AsyncSession) -> bool:
     return result.scalar()
 
 
+@decorate_logging
 async def check_exist_user_by_username(username: str, session: AsyncSession) -> bool:
     """Check Exists User By Username"""
     result = await session.execute(
@@ -30,6 +33,7 @@ async def check_exist_user_by_username(username: str, session: AsyncSession) -> 
     return result.scalar()
 
 
+@decorate_logging
 async def get_count_users(*args, session: AsyncSession) -> int:
     """Get Count Users Service"""
     result = await session.execute(
@@ -38,6 +42,7 @@ async def get_count_users(*args, session: AsyncSession) -> int:
     return result.scalar()
 
 
+@decorate_logging
 async def get_users(*args, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Users Service"""
     query = (
@@ -52,6 +57,7 @@ async def get_users(*args, session: AsyncSession, offset: int = null(), limit: i
     return result.scalars().all()
 
 
+@decorate_logging
 async def get_user_id_by_username(username: str, session: AsyncSession) -> int:
     """Get User ID By Username"""
     query = (
@@ -62,6 +68,7 @@ async def get_user_id_by_username(username: str, session: AsyncSession) -> int:
     return result.scalar()
 
 
+@decorate_logging
 async def get_user_info(user_id: int, session: AsyncSession) -> Row[tuple[Any, Any]] | None:
     """Get User Information By Username"""
     query = (
@@ -84,6 +91,7 @@ async def get_user_info(user_id: int, session: AsyncSession) -> Row[tuple[Any, A
     return result.first()
 
 
+@decorate_logging
 async def check_is_blocked_users(user_id: int, session: AsyncSession) -> int:
     """Check Is Blocked Users Service"""
     query = (
@@ -98,6 +106,7 @@ async def check_is_blocked_users(user_id: int, session: AsyncSession) -> int:
     return result.scalar()
 
 
+@decorate_logging
 async def block_user(user_id: int, is_ban: bool, message: Message, session: AsyncSession) -> bool:
     """Block / Unblock User Service"""
     text: str = await admin_text.ban_user_text(is_ban)
@@ -114,13 +123,12 @@ async def block_user(user_id: int, is_ban: bool, message: Message, session: Asyn
         await session.commit()
         await message.answer(text)
         return True
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при изменении пользователя')
-        await message.answer(str(exc))
         return False
 
 
+@decorate_logging
 async def create_user(user_id: int, username: str, message: Message, session: AsyncSession):
     """Create User Service"""
     query = (
@@ -130,13 +138,12 @@ async def create_user(user_id: int, username: str, message: Message, session: As
     try:
         await session.execute(query)
         await session.commit()
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при создании пользователя')
-        await message.answer(str(exc))
 
 
 # ================================================================= Orders
+@decorate_logging
 async def get_count_orders_by_user_id(user_id: int, session: AsyncSession) -> int:
     """Get Count Orders By User ID Service"""
     result = await session.execute(
@@ -145,6 +152,7 @@ async def get_count_orders_by_user_id(user_id: int, session: AsyncSession) -> in
     return result.scalar()
 
 
+@decorate_logging
 async def get_count_orders_by_status(status: str, session: AsyncSession) -> int:
     """Get Count Orders By Status Service"""
     result = await session.execute(
@@ -153,6 +161,7 @@ async def get_count_orders_by_status(status: str, session: AsyncSession) -> int:
     return result.scalar()
 
 
+@decorate_logging
 async def get_count_by_status(session: AsyncSession):
     """Get Count Orders by Status"""
     query = (
@@ -169,6 +178,7 @@ async def get_count_by_status(session: AsyncSession):
     return result.fetchone()
 
 
+@decorate_logging
 async def get_orders_by_status(status: str, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Orders by Status"""
     query = (
@@ -182,6 +192,7 @@ async def get_orders_by_status(status: str, session: AsyncSession, offset: int =
     return result.scalars().all()
 
 
+@decorate_logging
 async def get_customer_by_order(order_id: int, session: AsyncSession) -> Row[tuple[Any, Any]] | None:
     """Get Customer by Order ID Service"""
     query = (
@@ -194,6 +205,7 @@ async def get_customer_by_order(order_id: int, session: AsyncSession) -> Row[tup
     return result.first()
 
 
+@decorate_logging
 async def get_filename_task_tech(order_id: int, session: AsyncSession) -> str:
     """Get Filename Task Tech Service"""
     query = (
@@ -204,6 +216,7 @@ async def get_filename_task_tech(order_id: int, session: AsyncSession) -> str:
     return result.scalar()
 
 
+@decorate_logging
 async def get_my_order(user_id: int, order_id: int, session: AsyncSession):
     """Get My Order Service"""
     query = (
@@ -214,6 +227,7 @@ async def get_my_order(user_id: int, order_id: int, session: AsyncSession):
     return result.scalar()
 
 
+@decorate_logging
 async def get_order(order_id: int, session: AsyncSession):
     """Get Order Service"""
     query = (
@@ -224,6 +238,7 @@ async def get_order(order_id: int, session: AsyncSession):
     return result.scalar()
 
 
+@decorate_logging
 async def get_order_status(order_id: int, session: AsyncSession):
     """Get Order Status Service"""
     query = (
@@ -234,6 +249,7 @@ async def get_order_status(order_id: int, session: AsyncSession):
     return result.scalar()
 
 
+@decorate_logging
 async def get_my_orders(user_id: int, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Orders Service"""
     query = (
@@ -247,6 +263,7 @@ async def get_my_orders(user_id: int, session: AsyncSession, offset: int = null(
     return result.scalars().all()
 
 
+@decorate_logging
 async def change_status_order(order_id: int, status: str, message: Message, session: AsyncSession) -> bool:
     """Change Status Order Service"""
     query = (
@@ -260,13 +277,12 @@ async def change_status_order(order_id: int, status: str, message: Message, sess
         await session.commit()
         await message.answer(admin_text.CHANGE_SUCCESS_ORDER_TEXT)
         return True
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при изменении статуса заказа')
-        await message.answer(str(exc))
         return False
 
 
+@decorate_logging
 async def create_order(user_id: int, order_type: str, description: str, tech_task_filename: str | None,
                        message: Message, session: AsyncSession) -> bool:
     """Create Order Service"""
@@ -285,14 +301,13 @@ async def create_order(user_id: int, order_type: str, description: str, tech_tas
         await session.commit()
         await message.answer(user_text.CREATE_ORDER_TEXT_FINISH, reply_markup=buttons)
         return True
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при создании заказа')
-        await message.answer(str(exc), reply_markup=buttons)
         return False
 
 
 # ================================================================= Referral System
+@decorate_logging
 async def get_count_refer_link(user_id: int, session: AsyncSession) -> int:
     """Get Count Referral Links Service"""
     result = await session.execute(
@@ -301,6 +316,7 @@ async def get_count_refer_link(user_id: int, session: AsyncSession) -> int:
     return result.scalar()
 
 
+@decorate_logging
 async def get_referral_users_id(user_id: int, session: AsyncSession):
     """Get Referral Users ID Service"""
     query = (
@@ -311,6 +327,7 @@ async def get_referral_users_id(user_id: int, session: AsyncSession):
     return result.scalars().all()
 
 
+@decorate_logging
 async def create_refer_link(user_id: int, referral_id: int, session: AsyncSession) -> bool:
     """Create Referral Link Service"""
     query = (
@@ -330,6 +347,7 @@ async def create_refer_link(user_id: int, referral_id: int, session: AsyncSessio
 
 
 # ================================================================= Promo Code
+@decorate_logging
 async def create_promo_code(user_id: int, discount: int, message: Message, session: AsyncSession) -> bool:
     """Create Promo Code Service"""
     query = (
@@ -344,13 +362,12 @@ async def create_promo_code(user_id: int, discount: int, message: Message, sessi
         await session.commit()
         await message.answer(admin_text.PROMO_CODE_CREATE_TEXT)
         return True
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при создании промокода', reply_markup=ReplyKeyboardRemove())
-        await message.answer(str(exc))
         return False
 
 
+@decorate_logging
 async def get_count_promo_codes(*args, session: AsyncSession) -> int:
     """Get Count Promo Codes"""
     result = await session.execute(
@@ -359,6 +376,7 @@ async def get_count_promo_codes(*args, session: AsyncSession) -> int:
     return result.scalar()
 
 
+@decorate_logging
 async def get_count_promo_codes_by_user_id(user_id: int, session: AsyncSession) -> int:
     """Get Count Promo Codes By User ID"""
     result = await session.execute(
@@ -372,6 +390,7 @@ async def get_count_promo_codes_by_user_id(user_id: int, session: AsyncSession) 
     return result.scalar()
 
 
+@decorate_logging
 async def check_exists_promo_code_order(user_id: int, order_id: int, session: AsyncSession) -> bool:
     """Check Exist Active Promo Code in Order"""
     result = await session.execute(
@@ -384,6 +403,7 @@ async def check_exists_promo_code_order(user_id: int, order_id: int, session: As
     return result.scalar()
 
 
+@decorate_logging
 async def check_is_active_promo_code(promo_code_id: int, session: AsyncSession) -> bool:
     """Check is Active Promo Code"""
     result = await session.execute(
@@ -396,6 +416,7 @@ async def check_is_active_promo_code(promo_code_id: int, session: AsyncSession) 
     return result.scalar()
 
 
+@decorate_logging
 async def get_promo_code_for_order(order_id: int, session: AsyncSession):
     """Get Promo Code for Order"""
     query = (
@@ -406,6 +427,7 @@ async def get_promo_code_for_order(order_id: int, session: AsyncSession):
     return result.scalar()
 
 
+@decorate_logging
 async def get_my_promo_code(user_id: int, promo_code_id: int, session: AsyncSession):
     """Get My Promo Code Servicec"""
     query = (
@@ -416,6 +438,7 @@ async def get_my_promo_code(user_id: int, promo_code_id: int, session: AsyncSess
     return result.scalar()
 
 
+@decorate_logging
 async def get_promo_codes_by_user_id(user_id: int, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Promo Codes By User ID Service"""
     query = (
@@ -431,6 +454,7 @@ async def get_promo_codes_by_user_id(user_id: int, session: AsyncSession, offset
     return result.scalars().all()
 
 
+@decorate_logging
 async def get_owner_promo_code(promo_code_id: int, session: AsyncSession) -> Row[tuple[Any, Any]] | None:
     """Get Information Owner by Promo Code"""
     query = (
@@ -443,6 +467,7 @@ async def get_owner_promo_code(promo_code_id: int, session: AsyncSession) -> Row
     return result.first()
 
 
+@decorate_logging
 async def get_promo_code_by_id(promo_code_id: int, session: AsyncSession):
     """Get Promo Code By ID Service"""
     query = (
@@ -453,6 +478,7 @@ async def get_promo_code_by_id(promo_code_id: int, session: AsyncSession):
     return result.scalar()
 
 
+@decorate_logging
 async def get_promo_codes(*args, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Promo Codes Service"""
     query = (
@@ -465,6 +491,7 @@ async def get_promo_codes(*args, session: AsyncSession, offset: int = null(), li
     return result.scalars().all()
 
 
+@decorate_logging
 async def apply_promo_code(user_id: int, promo_code_id: int, order_id: int,
                            message: Message, session: AsyncSession) -> None:
     """Apply promo code to order"""
@@ -484,12 +511,11 @@ async def apply_promo_code(user_id: int, promo_code_id: int, order_id: int,
         await session.execute(query)
         await session.commit()
         await message.answer(user_text.PROMO_CODE_SUCCESS_APPLY)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при добавлении заказа в промокод')
-        await message.answer(str(exc))
 
 
+@decorate_logging
 async def delete_promo_code(promo_code_id: int, message: Message, session: AsyncSession) -> None:
     """Delete promo code"""
     query = (
@@ -502,13 +528,12 @@ async def delete_promo_code(promo_code_id: int, message: Message, session: Async
         await session.execute(query)
         await session.commit()
         await message.answer(admin_text.DELETE_PROMO_CODE_TEXT)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при удалении промокода')
-        await message.answer(str(exc))
 
 
 # ================================================================= Review
+@decorate_logging
 async def create_review(user_id: int, text: str, rating: int, message: Message, session: AsyncSession) -> None:
     """Create Review Service"""
     buttons = await user_reply_keyboard.start_reply_keyboard()
@@ -524,12 +549,11 @@ async def create_review(user_id: int, text: str, rating: int, message: Message, 
         await session.execute(query)
         await session.commit()
         await message.answer(user_text.CREATE_REVIEW_SUCCESS, reply_markup=buttons)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при создании отзыва')
-        await message.answer(str(exc), reply_markup=buttons)
 
 
+@decorate_logging
 async def get_count_reviews_by_user_id(user_id: int, session: AsyncSession) -> int:
     """Get Count Reviews By User ID"""
     result = await session.execute(
@@ -540,6 +564,7 @@ async def get_count_reviews_by_user_id(user_id: int, session: AsyncSession) -> i
     return result.scalar()
 
 
+@decorate_logging
 async def get_count_reviews(*args, session: AsyncSession) -> int:
     """Get Count Reviews"""
     result = await session.execute(
@@ -548,6 +573,7 @@ async def get_count_reviews(*args, session: AsyncSession) -> int:
     return result.scalar()
 
 
+@decorate_logging
 async def get_reviews(*args, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Reviews Service"""
     query = (
@@ -559,6 +585,7 @@ async def get_reviews(*args, session: AsyncSession, offset: int = null(), limit:
     return result.scalars().all()
 
 
+@decorate_logging
 async def get_reviews_by_user_id(user_id: int, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Reviews By User ID Service"""
     query = (
@@ -571,6 +598,7 @@ async def get_reviews_by_user_id(user_id: int, session: AsyncSession, offset: in
     return result.scalars().all()
 
 
+@decorate_logging
 async def get_review_by_id(review_id: int, session: AsyncSession):
     """Get Review By ID Service"""
     query = (
@@ -581,6 +609,7 @@ async def get_review_by_id(review_id: int, session: AsyncSession):
     return result.scalar()
 
 
+@decorate_logging
 async def update_review_by_id(review_id: int, is_publish: bool, message: Message, session: AsyncSession) -> None:
     """Publish / UnPublish Review By ID"""
     text: str = await admin_text.update_review(is_publish)
@@ -600,13 +629,12 @@ async def update_review_by_id(review_id: int, is_publish: bool, message: Message
         await session.execute(query)
         await session.commit()
         await message.answer(text)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при изменении отзыва')
-        await message.answer(str(exc))
 
 
 # ================================================================= Jobs
+@decorate_logging
 async def check_exists_projects(session: AsyncSession) -> bool:
     """Check Exists Projects Service"""
     result = await session.execute(
@@ -615,6 +643,7 @@ async def check_exists_projects(session: AsyncSession) -> bool:
     return result.scalar()
 
 
+@decorate_logging
 async def change_show_project(project_id: int, deleted: bool, message: Message, session: AsyncSession):
     """Edited Showing Project Service"""
     deleted = true() if deleted else false()
@@ -628,12 +657,11 @@ async def change_show_project(project_id: int, deleted: bool, message: Message, 
         await session.execute(query)
         await session.commit()
         await message.answer(admin_text.JOBS_SUCCESS_CHANGE)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при изменении видимости проекта')
-        await message.answer(str(exc))
 
 
+@decorate_logging
 async def change_project_info(project_id: int, values: dict, message: Message, session: AsyncSession):
     """Change Field Information Project"""
     query = (
@@ -646,12 +674,11 @@ async def change_project_info(project_id: int, values: dict, message: Message, s
         await session.execute(query)
         await session.commit()
         await message.answer(admin_text.JOBS_SUCCESS_CHANGE)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при изменении информации проекта')
-        await message.answer(str(exc))
 
 
+@decorate_logging
 async def get_count_projects(*args, session: AsyncSession) -> int:
     """Get Count Projects Service"""
     result = await session.execute(
@@ -660,6 +687,7 @@ async def get_count_projects(*args, session: AsyncSession) -> int:
     return result.scalar()
 
 
+@decorate_logging
 async def get_projects(*args, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Projects Service"""
     query = (
@@ -671,6 +699,7 @@ async def get_projects(*args, session: AsyncSession, offset: int = null(), limit
     return result.scalars().all()
 
 
+@decorate_logging
 async def get_count_projects_by_user(*args, session: AsyncSession) -> int:
     """Get Count Projects User Service"""
     result = await session.execute(
@@ -681,6 +710,7 @@ async def get_count_projects_by_user(*args, session: AsyncSession) -> int:
     return result.scalar()
 
 
+@decorate_logging
 async def get_projects_by_user(*args, session: AsyncSession, offset: int = null(), limit: int = 3):
     """Get Projects User Service"""
     query = (
@@ -693,6 +723,7 @@ async def get_projects_by_user(*args, session: AsyncSession, offset: int = null(
     return result.scalars().all()
 
 
+@decorate_logging
 async def get_project_by_id(project_id: int, session: AsyncSession):
     """Get Project By Project ID"""
     query = (
@@ -703,6 +734,7 @@ async def get_project_by_id(project_id: int, session: AsyncSession):
     return result.scalar()
 
 
+@decorate_logging
 async def create_project(
         title: str, description: str, technology: str, message: Message, session: AsyncSession) -> int | None:
     """Create Project Service"""
@@ -718,12 +750,11 @@ async def create_project(
     try:
         result = await session.execute(query)
         return result.scalar()
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при добавлении проекта')
-        await message.answer(str(exc), reply_markup=buttons)
 
 
+@decorate_logging
 async def create_image_project(project_id: int, files_name: list[str], message: Message, session: AsyncSession):
     """Create Image Project Service"""
     buttons = await admin_reply_keyboard.start_reply_keyboard()
@@ -737,12 +768,11 @@ async def create_image_project(project_id: int, files_name: list[str], message: 
         await session.execute(query)
         await session.commit()
         await message.answer(**admin_text.JOB_SUCCESS_ADD.as_kwargs(), reply_markup=buttons)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при Добавление Фотографий')
-        await message.answer(str(exc), reply_markup=buttons)
 
 
+@decorate_logging
 async def un_show_images_project(project_id: int, message: Message, session: AsyncSession) -> bool:
     """Un Show Images Project"""
     buttons = await admin_reply_keyboard.start_reply_keyboard()
@@ -756,13 +786,12 @@ async def un_show_images_project(project_id: int, message: Message, session: Asy
         await session.execute(query)
         await session.commit()
         return True
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при Изменении Видимости Фотографий')
-        await message.answer(str(exc), reply_markup=buttons)
         return False
 
 
+@decorate_logging
 async def get_images_project_by_id(project_id: int, session: AsyncSession):
     """Get Images Project By Project ID"""
     query = (
@@ -777,12 +806,14 @@ async def get_images_project_by_id(project_id: int, session: AsyncSession):
 
 
 # ================================================================= Tech Support
+@decorate_logging
 async def check_exist_tech_support(session: AsyncSession) -> bool:
     """Check Exist Tech Support Service"""
     result = await session.execute(select(exists(TechSupport.id)))
     return result.scalar()
 
 
+@decorate_logging
 async def get_tech_support(session: AsyncSession) -> Row[tuple[Any, Any]] | None:
     """Get Info About Tech Support"""
     result = await session.execute(
@@ -791,6 +822,7 @@ async def get_tech_support(session: AsyncSession) -> Row[tuple[Any, Any]] | None
     return result.first()
 
 
+@decorate_logging
 async def update_tech_support(username: str, email: str, message: Message, session: AsyncSession) -> None:
     """Update Tech Support Service"""
     buttons = await admin_reply_keyboard.start_reply_keyboard()
@@ -804,12 +836,11 @@ async def update_tech_support(username: str, email: str, message: Message, sessi
         await session.execute(query)
         await session.commit()
         await message.answer(admin_text.UPDATE_TECH_SUPPORT_SUCCESS, reply_markup=buttons)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при Изменении Технической Поддержки')
-        await message.answer(str(exc), reply_markup=buttons)
 
 
+@decorate_logging
 async def create_tech_support(username: str, email: str, message: Message, session: AsyncSession) -> None:
     """Create Tech Support Service"""
     buttons = await admin_reply_keyboard.start_reply_keyboard()
@@ -821,19 +852,19 @@ async def create_tech_support(username: str, email: str, message: Message, sessi
         await session.execute(query)
         await session.commit()
         await message.answer(admin_text.ADD_TECH_SUPPORT_SUCCESS, reply_markup=buttons)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при Добавлении Информации по Технической Поддержки')
-        await message.answer(str(exc), reply_markup=buttons)
 
 
 # ================================================================= Prices
+@decorate_logging
 async def check_exist_prices(session: AsyncSession) -> bool:
     """Check Exist Prices Service"""
     result = await session.execute(select(exists(Prices.id)))
     return result.scalar()
 
 
+@decorate_logging
 async def get_prices(session: AsyncSession) -> Row[tuple[Any, Any]] | None:
     """Get Info Prices Support"""
     result = await session.execute(
@@ -842,6 +873,7 @@ async def get_prices(session: AsyncSession) -> Row[tuple[Any, Any]] | None:
     return result.first()
 
 
+@decorate_logging
 async def update_prices(text: str, message: Message, session: AsyncSession) -> None:
     """Update Prices Service"""
     buttons = await admin_reply_keyboard.start_reply_keyboard()
@@ -855,12 +887,11 @@ async def update_prices(text: str, message: Message, session: AsyncSession) -> N
         await session.execute(query)
         await session.commit()
         await message.answer(admin_text.UPDATE_SUCCESS, reply_markup=buttons)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при Изменении Информации о Ценах')
-        await message.answer(str(exc), reply_markup=buttons)
 
 
+@decorate_logging
 async def create_prices(text: str, message: Message, session: AsyncSession) -> None:
     """Create Prices Service"""
     buttons = await admin_reply_keyboard.start_reply_keyboard()
@@ -872,19 +903,19 @@ async def create_prices(text: str, message: Message, session: AsyncSession) -> N
         await session.execute(query)
         await session.commit()
         await message.answer(admin_text.ADD_SUCCESS, reply_markup=buttons)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при Добавлении Цен')
-        await message.answer(str(exc), reply_markup=buttons)
 
 
 # ================================================================= About Team
+@decorate_logging
 async def check_exist_about_team(session: AsyncSession) -> bool:
     """Check Exist About Team Service"""
     result = await session.execute(select(exists(AboutTeam.id)))
     return result.scalar()
 
 
+@decorate_logging
 async def get_about_team(session: AsyncSession) -> Row[tuple[Any, Any]] | None:
     """Get Info About Team Support"""
     result = await session.execute(
@@ -893,6 +924,7 @@ async def get_about_team(session: AsyncSession) -> Row[tuple[Any, Any]] | None:
     return result.first()
 
 
+@decorate_logging
 async def update_about_team(text: str, message: Message, session: AsyncSession) -> None:
     """Update About Team Service"""
     buttons = await admin_reply_keyboard.start_reply_keyboard()
@@ -906,12 +938,11 @@ async def update_about_team(text: str, message: Message, session: AsyncSession) 
         await session.execute(query)
         await session.commit()
         await message.answer(admin_text.UPDATE_SUCCESS, reply_markup=buttons)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при Изменении Информации о Команде')
-        await message.answer(str(exc), reply_markup=buttons)
 
 
+@decorate_logging
 async def create_about_team(text: str, message: Message, session: AsyncSession) -> None:
     """Create About Team Service"""
     buttons = await admin_reply_keyboard.start_reply_keyboard()
@@ -923,7 +954,5 @@ async def create_about_team(text: str, message: Message, session: AsyncSession) 
         await session.execute(query)
         await session.commit()
         await message.answer(admin_text.ADD_SUCCESS, reply_markup=buttons)
-    except Exception as exc:
+    except Exception:
         await session.rollback()
-        await message.answer('Произошла ошибка при Добавлении Цен')
-        await message.answer(str(exc), reply_markup=buttons)

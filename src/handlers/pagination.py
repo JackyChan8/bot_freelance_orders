@@ -5,12 +5,14 @@ from aiogram.types import CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from utils.pagination import pagination, Pagination, paginationTypeText
+from config import decorate_logging
 from utils import utils_func
 
 router = Router(name='pagination')
 
 
 @router.callback_query(Pagination.filter())
+@decorate_logging
 async def pagination_handler(callback: CallbackQuery, callback_data: Pagination, session: AsyncSession) -> None:
     """Pagination Handler"""
     await utils_func.delete_before_message(callback)

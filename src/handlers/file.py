@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from utils.filters import IsBanUser, IsAdmin
 from utils import static_path as photo_user
+from config import decorate_logging
 from services import services
 
 
@@ -16,6 +17,7 @@ router = Router(name='file')
 
 
 @router.callback_query(IsBanUser(), F.data.startswith('download_file_'))
+@decorate_logging
 async def download_file(callback: CallbackQuery, session: AsyncSession) -> None:
     """Download File"""
     user_id: int = callback.from_user.id
@@ -31,6 +33,7 @@ async def download_file(callback: CallbackQuery, session: AsyncSession) -> None:
 
 
 @router.callback_query(IsBanUser(), F.data.startswith('download_photos_project_'))
+@decorate_logging
 async def download_photos(callback: CallbackQuery, session: AsyncSession) -> None:
     """Download Photos Project"""
     project_id: int = int(callback.data.split('_')[-1])
